@@ -1,4 +1,4 @@
-module github.com/dimedim/hw01_hello_otus
+module github.com/dimedim/hw-test/hw01_hello_otus
 
 go 1.22
 
