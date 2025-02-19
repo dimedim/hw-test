@@ -44,7 +44,7 @@ var (
 		В этот вечер...`
 
 	text1 = `"Нога, нога! 'нога'" "какой-то" "какойто" "dog,cat" 
-	"dogcat" "-------" "-" Нога, нОга. "нога!" 'нога' ------- - 
+	"dogcat" ------- "-" Нога, нОга. "нога!" 'нога' ------- - 
 	"какой-то" какойто dog,cat dogcat`
 	text2 = `- - - - - - - - - - - - - - -`
 
@@ -127,6 +127,26 @@ var (
 	to grow ahead of time, it
 	possible to pass a capacity explicitly as an additional
 	 parameter to make.`
+
+	dopTest1 = `awd
+	dfadf
+	fd wadawd d d
+	wadawd
+	привет привет!& привет? при-вет
+	врив,
+	1ghbdtn2
+	wadawd - - ,привет, 
+	100& .d...d.
+	"ckjdj"
+
+	--- -  ---   😒😒😒 
+
+	123😒😒😒 --😒😒😒--`
+
+	dopTest2 = `Например 100, 100$, 😀😃😄😁 это все разные слова,
+	но при этом от --😀😃😄😁-- --😀😃😄😁-- --😀😃😄😁-- --😀😃😄😁-- 
+	решение оставляет --,  100 
+	хотя должен оставить 😀😃😄😁 100$  100$  100$  100$ `
 )
 
 func TestTop10(t *testing.T) {
@@ -169,15 +189,7 @@ func TestTop10(t *testing.T) {
 
 func TestTop10Custom(t *testing.T) {
 	t.Run("edge conditions", func(t *testing.T) {
-		expected := []string{
-			"нога",
-			"-------",
-			"cat",
-			"dog",
-			"dogcat",
-			"какой-то",
-			"какойто",
-		}
+		expected := []string{"нога", "-------", "dog,cat", "dogcat", "какой-то", "какойто"}
 		require.Equal(t, expected, Top10(text1))
 	})
 
@@ -187,12 +199,22 @@ func TestTop10Custom(t *testing.T) {
 	})
 
 	t.Run("bigText", func(t *testing.T) {
-		expected := []string{"нога", "слова", "и", "это", "не", "dog", "разные", "cat", "and", "one"}
+		expected := []string{"нога", "слова", "и", "это", "не", "разные", "1", "2", "and", "one"}
 		require.Equal(t, expected, Top10(bigText))
 	})
 
 	t.Run("englishWords", func(t *testing.T) {
 		expected := []string{"to", "length", "of", "slice", "the", "a", "an", "make", "by", "capacity"}
 		require.Equal(t, expected, Top10(englishWords))
+	})
+
+	t.Run("Dop test 1", func(t *testing.T) {
+		expected := []string{"привет", "wadawd", "---", "d", "😒😒😒", "100", "123😒😒😒", "1ghbdtn2", "awd", "ckjdj"}
+		require.Equal(t, expected, Top10(dopTest1))
+	})
+
+	t.Run("Dop test 2", func(t *testing.T) {
+		expected := []string{"😀😃😄😁", "100$", "100", "--,", "все", "должен", "например", "но", "оставить", "оставляет"}
+		require.Equal(t, expected, Top10(dopTest2))
 	})
 }

@@ -1,6 +1,7 @@
 package hw03frequencyanalysis
 
 import (
+	"fmt"
 	"regexp"
 	"slices"
 	"strings"
@@ -58,14 +59,25 @@ func get10Words(pairs []wordsCount) []string {
 	return res
 }
 
-var (
-	regularExpr = `\p{L}+(-\p{L}+)*|-{2,}`
-	re          = regexp.MustCompile(regularExpr)
-)
+func getRegexp() string {
+	punctSimb := `(^|\s)\p{P}{2,}($|\s)`
+	words := `[^\s\p{P}]\S*[^\s\p{P}]+`
+	letters := `[^\s\p{P}]`
+
+	res := fmt.Sprintf("%s|%s|%s", punctSimb, words, letters)
+
+	return res
+}
+
+var re = regexp.MustCompile(getRegexp())
 
 func getWords(str string) []string {
-	// words := strings.Fields(str)
 	str = strings.ToLower(str)
+
 	words := re.FindAllString(str, -1)
+	for i, val := range words {
+		words[i] = strings.TrimSpace(val)
+	}
+
 	return words
 }
