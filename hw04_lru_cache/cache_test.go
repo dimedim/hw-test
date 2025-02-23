@@ -6,6 +6,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,15 +49,9 @@ func TestCache(t *testing.T) {
 		require.False(t, ok)
 		require.Nil(t, val)
 	})
-
-	t.Run("purge logic", func(t *testing.T) {
-		// Write me
-	})
 }
 
 func TestCacheMultithreading(t *testing.T) {
-	t.Skip() // Remove me if task with asterisk completed.
-
 	c := NewCache(10)
 	wg := &sync.WaitGroup{}
 	wg.Add(2)
@@ -76,4 +71,108 @@ func TestCacheMultithreading(t *testing.T) {
 	}()
 
 	wg.Wait()
+	c.Clear()
+	_ = t
+}
+
+func TestCustomCache(t *testing.T) {
+	t.Run("max buffer", func(t *testing.T) {
+		c := NewCache(3)
+
+		_ = c.Set("aaa", 111)
+		_ = c.Set("bbb", 222)
+		_ = c.Set("ccc", 333)
+		_ = c.Set("ddd", 444)
+		_ = c.Set("fff", 555)
+
+		val, ok := c.Get("aaa")
+
+		assert.False(t, ok)
+		assert.Nil(t, val)
+		c.Clear()
+	})
+
+	t.Run("purge logic", func(t *testing.T) {
+		c := NewCache(3)
+
+		_ = c.Set("aaa", 111)
+		_ = c.Set("bbb", 222)
+		_ = c.Set("ccc", 333)
+
+		_ = c.Set("bbb", 333)
+
+		val, ok := c.Get("aaa")
+		assert.True(t, ok)
+		assert.Equal(t, 111, val)
+
+		_ = c.Set("aaa", 555)
+		_, _ = c.Get("bbb")
+
+		val, ok = c.Get("aaa")
+		assert.True(t, ok)
+		assert.Equal(t, 555, val)
+
+		_ = c.Set("ccc", 555)
+		val, ok = c.Get("ccc")
+		assert.True(t, ok)
+		assert.Equal(t, 555, val)
+
+		_ = c.Set("fff", 999)
+
+		val, ok = c.Get("bbb")
+		assert.False(t, ok)
+		assert.Nil(t, val)
+
+		c.Clear()
+	})
+
+	t.Run("many purges", func(t *testing.T) {
+		c := NewCache(10000)
+		wg := &sync.WaitGroup{}
+
+		for i := 1; i <= 10000; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				c.Set(Key(strconv.Itoa(i)), i)
+			}(i)
+		}
+
+		wg.Wait()
+
+		val, ok := c.Get("900")
+		assert.True(t, ok)
+		assert.Equal(t, 900, val)
+
+		val, ok = c.Get("1")
+		assert.True(t, ok)
+		assert.Equal(t, 1, val)
+
+		val, ok = c.Get("9999")
+		assert.True(t, ok)
+		assert.Equal(t, 9999, val)
+
+		for i := 10000; i <= 20000; i++ {
+			wg.Add(1)
+			go func(i int) {
+				defer wg.Done()
+				c.Set(Key(strconv.Itoa(i)), i)
+			}(i)
+		}
+
+		wg.Wait()
+		val1, ok1 := c.Get("900")
+		assert.False(t, ok1)
+		assert.Nil(t, val1)
+
+		val1, ok1 = c.Get("1")
+		assert.False(t, ok1)
+		assert.Nil(t, val1)
+
+		val1, ok1 = c.Get("9999")
+		assert.False(t, ok1)
+		assert.Nil(t, val1)
+
+		c.Clear()
+	})
 }
