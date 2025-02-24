@@ -45,7 +45,6 @@ func (lc *lruCache) Set(key Key, value interface{}) bool {
 	}
 
 	item := lc.queue.PushFront(cacheItem)
-	lc.queue.MoveToFront(item)
 	lc.items[key] = item
 
 	if lc.queue.Len() > lc.capacity {
@@ -74,6 +73,6 @@ func (lc *lruCache) Get(key Key) (interface{}, bool) {
 func (lc *lruCache) Clear() {
 	lc.mu.Lock()
 	defer lc.mu.Unlock()
-	lc.items = make(map[Key]*ListItem)
+	lc.items = make(map[Key]*ListItem, lc.capacity)
 	lc.queue = NewList()
 }

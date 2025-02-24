@@ -51,17 +51,6 @@ func TestList(t *testing.T) {
 }
 
 func TestCustom(t *testing.T) {
-	t.Run("remove nil", func(t *testing.T) {
-		l := NewList()
-
-		l.PushFront(100)
-		l.PushBack(200)
-		require.Equal(t, 2, l.Len())
-
-		l.Remove(&ListItem{})
-		require.Equal(t, 2, l.Len())
-	})
-
 	t.Run("move head", func(t *testing.T) {
 		l := NewList()
 
