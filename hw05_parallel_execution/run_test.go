@@ -68,3 +68,95 @@ func TestRun(t *testing.T) {
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
 	})
 }
+
+func TestLessZeroErrors(t *testing.T) {
+	t.Run("test m < 0 value", func(t *testing.T) {
+		const taskCount = 55
+		var executed int32
+
+		tasks := make([]Task, 0, taskCount)
+
+		for i := 0; i < taskCount; i++ {
+			tasks = append(tasks, func() error {
+				atomic.AddInt32(&executed, 1)
+				return nil
+			})
+		}
+
+		err := Run(tasks, 10, -55)
+		require.NoError(t, err)
+		require.Equal(t, int32(taskCount), atomic.LoadInt32(&executed))
+	})
+	t.Run("test m == 0 value", func(t *testing.T) {
+		const taskCount = 55
+		var executed int32
+
+		tasks := make([]Task, 0, taskCount)
+
+		for i := 0; i < taskCount; i++ {
+			tasks = append(tasks, func() error {
+				atomic.AddInt32(&executed, 1)
+				return nil
+			})
+		}
+
+		err := Run(tasks, 10, 0)
+		require.NoError(t, err)
+		require.Equal(t, int32(taskCount), atomic.LoadInt32(&executed))
+	})
+}
+
+func TestRun_ErrorsLimitExceeded(t *testing.T) {
+	const tasksCount = 1000
+	var executed int32
+
+	tasks := make([]Task, 0, tasksCount)
+	for i := 0; i < tasksCount; i++ {
+		tasks = append(tasks, func() error {
+			atomic.AddInt32(&executed, 1)
+			return errors.New("task error")
+		})
+	}
+
+	n, m := 10, 3
+	err := Run(tasks, n, m)
+	require.Error(t, err)
+	require.Equal(t, ErrErrorsLimitExceeded, err)
+	require.LessOrEqual(t, atomic.LoadInt32(&executed), int32(n+m))
+}
+
+func TestConcurrencyWithoutSleep(t *testing.T) {
+	const numTasks = 50
+	const NumNeededGorut = 50
+	var currentGorutines int32
+
+	tasks := make([]Task, numTasks)
+
+	waitingCh := make(chan struct{})
+
+	for i := 0; i < numTasks; i++ {
+		tasks[i] = func() error {
+			atomic.AddInt32(&currentGorutines, 1)
+
+			<-waitingCh
+			atomic.AddInt32(&currentGorutines, -1)
+			return nil
+		}
+	}
+
+	var err error
+	doneRunCh := make(chan struct{})
+	go func() {
+		err = Run(tasks, NumNeededGorut, 1)
+		close(doneRunCh)
+	}()
+
+	require.Eventually(t, func() bool {
+		return atomic.LoadInt32(&currentGorutines) == int32(NumNeededGorut)
+	}, 1*time.Second, 10*time.Millisecond)
+
+	close(waitingCh)
+	<-doneRunCh
+	require.NoError(t, err)
+	require.Equal(t, atomic.LoadInt32(&currentGorutines), int32(0))
+}
