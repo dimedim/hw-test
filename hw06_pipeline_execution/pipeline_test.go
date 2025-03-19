@@ -174,7 +174,7 @@ func TestManyStages(t *testing.T) {
 		stages := make([]Stage, 0, numStagesTest1)
 
 		for range numStagesTest1 {
-			stages = append(stages, stageGenerator("", func(v interface{}) interface{} { return v.(int) + 1 }))
+			stages = append(stages, stageGenerator("", func(v any) any { return v.(int) + 1 }))
 		}
 
 		dataChan := make(Bi)
@@ -204,7 +204,7 @@ func TestManyStages(t *testing.T) {
 		stages := make([]Stage, 0, numStagesTest2)
 
 		for range numStagesTest2 {
-			stages = append(stages, stageGenerator("", func(v interface{}) interface{} { return v.(int) + 1 }))
+			stages = append(stages, stageGenerator("", func(v any) any { return v.(int) + 1 }))
 		}
 
 		dataChan := make(Bi)
