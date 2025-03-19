@@ -150,6 +150,87 @@ func TestAllStageStop(t *testing.T) {
 		wg.Wait()
 
 		require.Len(t, result, 0)
+	})
+}
 
+func TestManyStages(t *testing.T) {
+	const numStagesTest1 = 10000
+	const NumDataTest2 = 10000
+	const numStagesTest2 = 100
+	stageGenerator := func(_ string, f func(v interface{}) interface{}) Stage {
+		return func(in In) Out {
+			out := make(Bi)
+			go func() {
+				defer close(out)
+				for v := range in {
+					out <- f(v)
+				}
+			}()
+			return out
+		}
+	}
+
+	t.Run("a lot of stages", func(t *testing.T) {
+		stages := make([]Stage, 0, numStagesTest1)
+
+		for range numStagesTest1 {
+			stages = append(stages, stageGenerator("", func(v interface{}) interface{} { return v.(int) + 1 }))
+		}
+
+		dataChan := make(Bi)
+		data := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		resExpData := make([]int, 0, len(data))
+
+		for _, v := range data {
+			resExpData = append(resExpData, v+len(stages))
+		}
+
+		go func() {
+			defer close(dataChan)
+			for _, v := range data {
+				dataChan <- v
+			}
+		}()
+
+		result := make([]int, 0, len(data))
+		for outputData := range ExecutePipeline(dataChan, nil, stages...) {
+			result = append(result, outputData.(int))
+		}
+
+		require.Equal(t, resExpData, result)
+	})
+
+	t.Run("a lot of data", func(t *testing.T) {
+		stages := make([]Stage, 0, numStagesTest2)
+
+		for range numStagesTest2 {
+			stages = append(stages, stageGenerator("", func(v interface{}) interface{} { return v.(int) + 1 }))
+		}
+
+		dataChan := make(Bi)
+		data := make([]int, 0, NumDataTest2)
+
+		for i := range NumDataTest2 {
+			data = append(data, i+1)
+		}
+		resExpData := make([]int, 0, len(data))
+
+		for _, v := range data {
+			resExpData = append(resExpData, v+len(stages))
+		}
+
+		go func() {
+			defer close(dataChan)
+			for _, v := range data {
+				dataChan <- v
+			}
+		}()
+
+		result := make([]int, 0, len(data))
+		for outputData := range ExecutePipeline(dataChan, nil, stages...) {
+			result = append(result, outputData.(int))
+		}
+
+		require.Equal(t, resExpData, result)
 	})
 }
