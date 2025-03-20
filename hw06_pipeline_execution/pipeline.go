@@ -10,7 +10,7 @@ type Stage func(in In) (out Out)
 
 func ExecutePipeline(in In, done In, stages ...Stage) Out {
 	for _, stage := range stages {
-		in = wrapStage(stage(orDone(in, done)), done)
+		in = wrapStage(stage(in), done)
 	}
 
 	return in
@@ -19,14 +19,17 @@ func ExecutePipeline(in In, done In, stages ...Stage) Out {
 func wrapStage(stageDataCh Out, done In) Out {
 	out := make(Bi)
 
+	clearAllData := func() {
+		for v := range stageDataCh {
+			_ = v
+		}
+	}
 	go func() {
 		defer close(out)
 		for {
 			select {
 			case <-done:
-				for range stageDataCh {
-					<-stageDataCh
-				}
+				go clearAllData()
 				return
 			case val, ok := <-stageDataCh:
 				if !ok {
@@ -35,9 +38,7 @@ func wrapStage(stageDataCh Out, done In) Out {
 				select {
 				case out <- val:
 				case <-done:
-					for range stageDataCh {
-						<-stageDataCh
-					}
+					go clearAllData()
 					return
 				}
 			}
@@ -45,28 +46,4 @@ func wrapStage(stageDataCh Out, done In) Out {
 	}()
 
 	return out
-}
-
-func orDone(in Out, done In) Out {
-	outCh := make(Bi)
-
-	go func() {
-		defer close(outCh)
-		for {
-			select {
-			case <-done:
-				return
-			case val, ok := <-in:
-				if !ok {
-					return
-				}
-				select {
-				case <-done:
-					return
-				case outCh <- val:
-				}
-			}
-		}
-	}()
-	return outCh
 }
