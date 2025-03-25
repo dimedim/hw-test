@@ -1,0 +1,42 @@
+s
+The Project
+Help
+Blog
+Play
+Search
+
+Getting Started
+Install the Go tools
+Test your installation
+Installing extra Go versions
+Uninstalling Go
+Getting help
+Download the Go distribution
+Download Go
+Click here to visit the downloads page
+Official binary distributions are available for the FreeBSD (release 10-STABLE and above), Linux, macOS (10.10 and above), and Windows operating systems and the 32-bit (386) and 64-bit (amd64) x86 processor architectures.
+
+If a binary distribution is not available for your combination of operating system and architecture, try installing from source or installing gccgo instead of gc.
+
+System requirements
+Go binary distributions are available for these supported operating systems and architectures. Please ensure your system meets these requirements before proceeding. If your OS or architecture is not on the list, you may be able to install from source or use gccgo instead.
+
+Operating system	Architectures	Notes
+FreeBSD 10.3 or later	amd64, 386	Debian GNU/kFreeBSD not supported
+Linux 2.6.23 or later with glibc	amd64, 386, arm, arm64,
+s390x, ppc64le	CentOS/RHEL 5.x not supported.
+Install from source for other libc.
+macOS 10.10 or later	amd64	use the clang or gcc† that comes with Xcode‡ for cgo support
+Windows 7, Server 2008R2 or later	amd64, 386	use MinGW (386) or MinGW-W64 (amd64) gcc†.
+No need for cygwin or msys.
+†A C compiler is required only if you plan to use cgo.
+‡You only need to install the command line tools for Xcode. If you have already installed Xcode 4.3+, you can install it from the Components tab of the Downloads preferences panel.
+
+Install the Go tools
+If you are upgrading from an older version of Go you must first remove the existing version.
+
+Linux, macOS, and FreeBSD tarballs
+Download the archive and extract it into /usr/local, creating a Go tree in /usr/local/go. For example:
+
+tar -C /usr/local -xzf go$VERSION.$OS-$ARCH.tar.gz
+Choose the archive file appropriate for your installation. For instance, if you are i
