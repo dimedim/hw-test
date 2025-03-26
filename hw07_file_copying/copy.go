@@ -15,11 +15,15 @@ var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
 	ErrOffsetExceedsFileSize = errors.New("offset exceeds file size")
 	ErrEmptyFilePath         = errors.New("empty file path")
+	ErrNoNewFile             = errors.New("there is no new file")
 )
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
 	if fromPath == "" || toPath == "" {
 		return ErrEmptyFilePath
+	}
+	if fromPath == toPath {
+		return ErrNoNewFile
 	}
 
 	fileInfo, err := os.Stat(fromPath)
@@ -55,7 +59,6 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if err != nil {
 		return fmt.Errorf("create file: %w", err)
 	}
-	defer dst.Close()
 
 	bar := pb.Full.Start64(limit)
 	defer bar.Finish()
@@ -63,8 +66,11 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 
 	_, err = io.CopyN(dst, barReader, limit)
 	if err != nil && !errors.Is(err, io.EOF) {
+		dst.Close()
+		os.Remove(toPath)
 		return fmt.Errorf("copy file: %w", err)
 	}
+	dst.Close()
 
 	return nil
 }

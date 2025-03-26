@@ -135,4 +135,10 @@ func TestCopyCustom(t *testing.T) {
 			require.Equal(t, expected, actual)
 		})
 	}
+
+	t.Run("there is no new file", func(t *testing.T) {
+		filename := filepath.Join(DIR, "mini_data.txt")
+		err := Copy(filename, filename, 0, 0)
+		require.ErrorIs(t, err, ErrNoNewFile)
+	})
 }
