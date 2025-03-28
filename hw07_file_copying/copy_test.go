@@ -141,4 +141,17 @@ func TestCopyCustom(t *testing.T) {
 		err := Copy(filename, filename, 0, 0)
 		require.ErrorIs(t, err, ErrNoNewFile)
 	})
+	t.Run("empty toPath file", func(t *testing.T) {
+		toPath := "filename.txt"
+		filename := filepath.Join(DIR, "mini_data.txt")
+		err := Copy(filename, toPath, 0, 0)
+		require.NoError(t, err)
+		err = os.Remove(toPath)
+		require.NoError(t, err)
+	})
+	t.Run("same file, but different filename", func(t *testing.T) {
+		filename := filepath.Join(DIR, "mini_data.txt")
+		err := Copy(filename, "./"+filename, 0, 0)
+		require.ErrorIs(t, err, ErrNoNewFile)
+	})
 }

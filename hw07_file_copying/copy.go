@@ -22,20 +22,28 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 	if fromPath == "" || toPath == "" {
 		return ErrEmptyFilePath
 	}
-	if fromPath == toPath {
-		return ErrNoNewFile
-	}
 
-	fileInfo, err := os.Stat(fromPath)
+	fileInfoFrom, err := os.Stat(fromPath)
 	if err != nil {
-		return fmt.Errorf("get stat: %w", err)
+		return fmt.Errorf("get stat fromPath: %w ", err)
 	}
 
-	if !fileInfo.Mode().IsRegular() {
+	fileInfoTo, err := os.Stat(toPath)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("get stat toPath: %w ", err)
+	}
+
+	if err == nil {
+		if os.SameFile(fileInfoFrom, fileInfoTo) {
+			return ErrNoNewFile
+		}
+	}
+
+	if !fileInfoFrom.Mode().IsRegular() {
 		return ErrUnsupportedFile
 	}
 
-	fileSize := fileInfo.Size()
+	fileSize := fileInfoFrom.Size()
 
 	if offset > fileSize {
 		return ErrOffsetExceedsFileSize
