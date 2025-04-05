@@ -44,7 +44,7 @@ func ReadDir(dir string) (Environment, error) {
 			envMap[name] = envVal
 			continue
 		}
-		fileData = bytes.TrimRight(fileData, " \t")
+
 		idx := bytes.Index(fileData, []byte{'\n'})
 
 		if idx != -1 {
@@ -52,7 +52,7 @@ func ReadDir(dir string) (Environment, error) {
 		}
 		fileData = bytes.ReplaceAll(fileData, []byte("\000"), []byte{'\n'})
 
-		// fileData = bytes.TrimSpace(fileData)
+		fileData = bytes.TrimRight(fileData, " \t")
 		envVal.Value = string(fileData)
 		envMap[name] = envVal
 	}
