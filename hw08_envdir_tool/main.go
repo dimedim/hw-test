@@ -20,6 +20,5 @@ func main() {
 	}
 
 	status := RunCmd(cmd, env)
-	fmt.Println("status code:", status)
 	os.Exit(status)
 }
