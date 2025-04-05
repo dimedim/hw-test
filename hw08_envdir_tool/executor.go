@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 // RunCmd runs a command + arguments (cmd) with environment variables from env.
@@ -14,7 +15,7 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	}
 	newCmd := exec.Command(cmd[0], cmd[1:]...) // #nosec G204
 
-	newCmd.Env = getEnvs(env)
+	newCmd.Env = updateEnv(env)
 
 	newCmd.Stderr = os.Stderr
 	newCmd.Stdin = os.Stdin
@@ -31,13 +32,26 @@ func RunCmd(cmd []string, env Environment) (returnCode int) {
 	return 0
 }
 
-func getEnvs(env Environment) []string {
-	res := make([]string, 0, len(env))
+func updateEnv(env Environment) []string {
+	originEnv := os.Environ()
+
+	finalEnv := make([]string, 0, len(originEnv)+len(env))
+
+	customEnvMap := make(map[string]struct{}, len(env))
+
 	for key, v := range env {
+		customEnvMap[key] = struct{}{}
 		if v.NeedRemove {
 			continue
 		}
-		res = append(res, fmt.Sprintf("%v=%v", key, v.Value))
+		finalEnv = append(finalEnv, fmt.Sprintf("%v=%v", key, v.Value))
 	}
-	return res
+	for _, pair := range originEnv {
+		parts := strings.SplitN(pair, "=", 2)
+
+		if _, exists := customEnvMap[parts[0]]; !exists {
+			finalEnv = append(finalEnv, pair)
+		}
+	}
+	return finalEnv
 }

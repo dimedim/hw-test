@@ -65,7 +65,7 @@ func TestReadDir(t *testing.T) {
 			NeedRemove: false,
 		},
 		"VAR2": EnvValue{
-			Value:      "value",
+			Value:      "  value",
 			NeedRemove: false,
 		},
 		"EMPTY": EnvValue{
@@ -77,7 +77,7 @@ func TestReadDir(t *testing.T) {
 			NeedRemove: true,
 		},
 		"NULL_BYTE": EnvValue{
-			Value:      "some",
+			Value:      "some\nvalue",
 			NeedRemove: false,
 		},
 	}
