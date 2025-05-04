@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 type UserRole string
@@ -56,5 +58,52 @@ func TestValidate(t *testing.T) {
 			// Place your code here.
 			_ = tt
 		})
+	}
+}
+
+func GetValidCheckList(len, min, max int, reg string, in []string) CheckList {
+	return CheckList{
+		Len:    len,
+		Regexp: reg,
+		In:     in,
+		Min:    min,
+		Max:    max,
+	}
+}
+func TestNewValidators(t *testing.T) {
+	tests := []struct {
+		validate          string
+		expectedCheckList CheckList
+	}{
+		{
+			validate:          "in:200,404,500",
+			expectedCheckList: GetValidCheckList(0, 0, 0, "", []string{"200", "404", "500"}),
+		},
+		{
+			validate:          "in:admin,stuff",
+			expectedCheckList: GetValidCheckList(0, 0, 0, "", []string{"admin", "stuff"}),
+		},
+		{
+			validate:          "min:18|max:50",
+			expectedCheckList: GetValidCheckList(0, 18, 50, "", nil),
+		},
+		{
+			validate:          "regexp:^\\w+@\\w+\\.\\w+$",
+			expectedCheckList: GetValidCheckList(0, 0, 0, "^\\w+@\\w+\\.\\w+$", nil),
+		},
+		{
+			validate:          "len:50",
+			expectedCheckList: GetValidCheckList(50, 0, 0, "", nil),
+		},
+		{
+			validate:          "regexp:awdawdaw:awdwad:awdawd:123",
+			expectedCheckList: GetValidCheckList(0, 0, 0, "awdawdaw:awdwad:awdawd:123", nil),
+		},
+	}
+
+	for _, tc := range tests {
+		vc, err := GetCheckListFromStructTag(tc.validate)
+		require.NoError(t, err)
+		require.Equal(t, tc.expectedCheckList, *vc)
 	}
 }
