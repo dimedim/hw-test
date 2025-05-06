@@ -4,8 +4,17 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
+)
+
+var (
+	ErrLen    = errors.New("length does not match")
+	ErrRegexp = errors.New("value does not match regexp")
+	ErrInt    = errors.New("value not in allowed list")
+	ErrMin    = errors.New("value less than minimum")
+	ErrMax    = errors.New("value more than maximum")
 )
 
 type ValidationError struct {
@@ -16,196 +25,167 @@ type ValidationError struct {
 type ValidationErrors []ValidationError
 
 func (v ValidationErrors) Error() string {
-
-	// TODO: мб стрингс билдер
-	var res string
-	for _, ve := range v {
-		res += fmt.Sprintf("Field: %s, Error:%s", ve.Field, ve.Err)
+	var sb strings.Builder
+	for _, e := range v {
+		sb.WriteString(fmt.Sprintf("Field: %s, Error:%s; ", e.Field, e.Err))
 	}
-	panic("implement me")
+	return sb.String()
 }
 
 type CheckList struct {
 	Len    *int
-	Regexp *string
+	Regexp *regexp.Regexp
 	In     []string
 	Min    *int
 	Max    *int
 }
 
-const NotSet = 0
-
 func GetCheckListFromStructTag(structTag string) (*CheckList, error) {
-
-	var res CheckList
-	rules := strings.Split(structTag, "|")
-	for _, rule := range rules {
-		keyVal := strings.SplitN(rule, ":", 2)
-		if len(keyVal) != 2 {
-
-			// TODO:
-			return nil, fmt.Errorf("not enough args: %v", keyVal)
+	res := CheckList{}
+	for _, rule := range strings.Split(structTag, "|") {
+		parts := strings.SplitN(rule, ":", 2)
+		if len(parts) != 2 {
+			return nil, fmt.Errorf("unknown validation key: %s", parts[0])
 		}
-		switch keyVal[0] {
+		key, val := parts[0], parts[1]
+		switch key {
 		case "len":
-			num, err := strconv.Atoi(keyVal[1])
+			n, err := strconv.Atoi(val)
 			if err != nil {
 				return nil, err
 			}
-			res.Len = &num
+			res.Len = &n
+
 		case "min":
-			num, err := strconv.Atoi(keyVal[1])
+			n, err := strconv.Atoi(val)
 			if err != nil {
 				return nil, err
 			}
-			res.Min = &num
+			res.Min = &n
+
 		case "max":
-			num, err := strconv.Atoi(keyVal[1])
+			n, err := strconv.Atoi(val)
 			if err != nil {
 				return nil, err
 			}
-			res.Max = &num
+			res.Max = &n
+
 		case "in":
-			res.In = strings.Split(keyVal[1], ",")
+			res.In = strings.Split(val, ",")
 
 		case "regexp":
-			// TODO:
-			// ParseRegexp(keyVal[1])
-			res.Regexp = &keyVal[1]
+			re, err := regexp.Compile(val)
+			if err != nil {
+				return nil, err
+			}
+			res.Regexp = re
+
+		default:
+			return nil, fmt.Errorf("unknown validation key: %s", key)
 		}
 	}
-
 	return &res, nil
 }
 
-// TODO:
-func ParseRegexp(str string) {
-
-}
-
-// Подсказки:
-// reflect.StructTag
-// regexp.Compile
-
-// Функиця валидирует ПУБЛИЧНЫЕ поля на основе структурного тега validate.
-// Функция может возвращать или програмную ошибку, или ValidationErrors произошедшую во время валидации.
 func Validate(v any) error {
-
-	//как проверить публичное поле или нет?
-
-	var resCustomErrors ValidationErrors
-
-	// 	check if not struct
-	// 	Проверка что входной интерфейс структура
-	structVal, err := GetStruct(v)
-	if err != nil {
-		return err
+	rv := reflect.ValueOf(v)
+	if rv.Kind() == reflect.Ptr {
+		rv = rv.Elem()
+	}
+	if rv.Kind() != reflect.Struct {
+		return errors.New("expected a struct")
 	}
 
-	structType := structVal.Type()
+	rt := rv.Type()
+	var allErrs ValidationErrors
 
-	for i := 0; i < structVal.NumField(); i++ {
-		// 	ф-я игнорирует поля без структурных тегов/тегов validate
-		structFieldInfo := structType.Field(i)
-		structFieldVal := structVal.Field(i)
-
-		if !structFieldInfo.IsExported() {
+	for i := 0; i < rt.NumField(); i++ {
+		f := rt.Field(i)
+		if !f.IsExported() {
 			continue
 		}
-		structTag := structFieldInfo.Tag.Get("validate")
-		if structTag == "" {
+		tag := f.Tag.Get("validate")
+		if tag == "" {
 			continue
 		}
 
-		checkList, err := GetCheckListFromStructTag(structTag)
+		cl, err := GetCheckListFromStructTag(tag)
 		if err != nil {
-			// TODO: нужно понять как обрабатывать
-			// ошибки невеных стракт тегов в поле in: итд
-			// fmt.Errorf("not enough args: может вернуть например
 			return err
 		}
 
-		// var cmpTmpErr ValidationErrors
-		// скорее всего для каждой страктфилд одна ошибка и не нужно ебаться
-		// err = ProcessStructFields(sf, structTag)
-		err = checkList.ProcessStructFields(structFieldInfo, structFieldVal)
-		if err != nil {
-			var customValidateErrors ValidationErrors
-			if errors.As(err, &customValidateErrors) {
-				resCustomErrors = append(resCustomErrors, customValidateErrors...)
-			} else {
-				return err
+		val := rv.Field(i)
+		name := f.Name
+
+		switch f.Type.Kind() {
+		case reflect.String:
+			allErrs = append(allErrs, validateString(name, val.String(), cl)...)
+
+		case reflect.Int:
+			allErrs = append(allErrs, validateInt(name, int(val.Int()), cl)...)
+
+		case reflect.Slice:
+			for j := 0; j < val.Len(); j++ {
+				elem := val.Index(j)
+				elemName := fmt.Sprintf("%s[%d]", name, j)
+				switch elem.Kind() {
+				case reflect.String:
+					allErrs = append(allErrs, validateString(elemName, elem.String(), cl)...)
+				case reflect.Int:
+					allErrs = append(allErrs, validateInt(elemName, int(elem.Int()), cl)...)
+				}
 			}
 		}
-
 	}
 
-	// 	Parse struct tag:
-	// 	min max regexp
-	// 	in, len
-
-	// TODO: ДОП: Ошибки валидации вынести в отдельные переменные и заврапить %w
-
-	return resCustomErrors
-}
-
-// Обработка поля структуры и запуск валидности разные свич кейсы или типо того.
-// Возвращает либо ошибку и программа завершается, либо результат проверки.
-// int, []int;
-// string, []string.
-
-func (cl *CheckList) ProcessStructFields(info reflect.StructField, val reflect.Value) error {
-	switch info.Type.Kind() {
-	case reflect.Int:
-		return cl.ProcessInt(val.Int())
+	if len(allErrs) > 0 {
+		return allErrs
 	}
 	return nil
 }
 
-func (cl *CheckList) ProcessInt(val int64) error {
-	if cl.Min != nil && val < int64(*cl.Min){
-		return ValidationErrors{ValidationError{
-			Field: ,
-		}}
+func validateString(field, s string, cl *CheckList) ValidationErrors {
+	var errs ValidationErrors
+	if cl.Len != nil && len(s) != *cl.Len {
+		errs = append(errs, ValidationError{Field: field, Err: ErrLen})
 	}
-	return nil
-}
-
-func ProcessStructFields(sf reflect.StructField, tag string) error {
-
-	switch sf.Type.Kind() {
-	case reflect.Int:
-
+	if cl.Regexp != nil && !cl.Regexp.MatchString(s) {
+		errs = append(errs, ValidationError{Field: field, Err: ErrRegexp})
 	}
-	return nil
-}
-
-func ProcessInts(structTag string) {
-
-}
-func GetStruct(v any) (reflect.Value, error) {
-	value := reflect.ValueOf(v)
-
-	if value.Kind() == reflect.Ptr {
-		if value.IsNil() {
-			return value, errors.New("value is nil pointer")
+	if len(cl.In) > 0 {
+		ok := false
+		for _, v := range cl.In {
+			if s == v {
+				ok = true
+				break
+			}
 		}
-		value = value.Elem()
+		if !ok {
+			errs = append(errs, ValidationError{Field: field, Err: ErrInt})
+		}
 	}
-
-	if value.Kind() != reflect.Struct {
-		return value, errors.New("value is not a struct")
-	}
-
-	return value, nil
-
+	return errs
 }
 
-func CheckStructTags(field any) bool {
-	// a := reflect.StructOf()
-	return false
-}
-
-func ValidateLen(value reflect.Value) error {
-	return nil
+func validateInt(field string, x int, cl *CheckList) ValidationErrors {
+	var errs ValidationErrors
+	if cl.Min != nil && x < *cl.Min {
+		errs = append(errs, ValidationError{Field: field, Err: ErrMin})
+	}
+	if cl.Max != nil && x > *cl.Max {
+		errs = append(errs, ValidationError{Field: field, Err: ErrMax})
+	}
+	if len(cl.In) > 0 {
+		ok := false
+		for _, v := range cl.In {
+			if n, err := strconv.Atoi(v); err == nil && n == x {
+				ok = true
+				break
+			}
+		}
+		if !ok {
+			errs = append(errs, ValidationError{Field: field, Err: ErrInt})
+		}
+	}
+	return errs
 }
