@@ -103,44 +103,51 @@ func TestValidate(t *testing.T) {
 	for i, tC := range testCases {
 		t.Run(fmt.Sprintf("case %d", i), func(t *testing.T) {
 			t.Parallel()
-			err := Validate(tC.in)
+			gotErr := Validate(tC.in)
 
 			if tC.expectedErr == nil {
-				if err != nil {
-					t.Fatalf("case %d: expected no error, got %v", i, err)
+				if gotErr != nil {
+					t.Fatalf("case %d: expected no error, got %v", i, gotErr)
 				}
 				return
 			}
 
-			if err == nil {
+			if gotErr == nil {
 				t.Fatalf("case %d: expected error %v, got nil", i, tC.expectedErr)
 			}
 
-			if wantVEs, ok := tC.expectedErr.(ValidationErrors); ok {
-				var gotVEs ValidationErrors
-				if !errors.As(err, &gotVEs) {
-					t.Fatalf("case %d: expected ValidationErrors, got %T %v", i, err, err)
-				}
-				if len(gotVEs) != len(wantVEs) {
-					t.Errorf("case %d: expected %d validation errors, got %d", i, len(wantVEs), len(gotVEs))
-				}
-				for _, exp := range wantVEs {
-					found := false
-					for _, got := range gotVEs {
-						if got.Field == exp.Field && errors.Is(got.Err, exp.Err) {
-							found = true
-							break
-						}
-					}
-					if !found {
-						t.Errorf("case %d: missing expected error %q on field %q", i, exp.Err, exp.Field)
-					}
-				}
-				return
-			}
-			if !strings.Contains(err.Error(), tC.expectedErr.Error()) {
-				t.Errorf("case %d: expected error containing %q, got %q", i, tC.expectedErr.Error(), err.Error())
-			}
+			assertError(t, gotErr, tC.expectedErr, i)
 		})
+	}
+}
+
+func assertError(t *testing.T, got, want error, idx int) {
+	t.Helper()
+	var wantVEs ValidationErrors
+	if errors.As(want, &wantVEs) {
+		var gotVEs ValidationErrors
+		if !errors.As(got, &gotVEs) {
+			t.Fatalf("case %d: expected ValidationErrors, got %T %v", idx, got, got)
+		}
+		if len(gotVEs) != len(wantVEs) {
+			t.Errorf("case %d: expected %d errors, got %d", idx, len(wantVEs), len(gotVEs))
+		}
+		for _, exp := range wantVEs {
+			found := false
+			for _, act := range gotVEs {
+				if act.Field == exp.Field && errors.Is(act.Err, exp.Err) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Errorf("case %d: missing expected error %q on field %q", idx, exp.Err, exp.Field)
+			}
+		}
+		return
+	}
+
+	if !strings.Contains(got.Error(), want.Error()) {
+		t.Errorf("case %d: expected error containing %q, got %q", idx, want.Error(), got.Error())
 	}
 }

@@ -117,6 +117,7 @@ func Validate(v any) error {
 		val := rv.Field(i)
 		name := f.Name
 
+		//nolint:exhaustive
 		switch f.Type.Kind() {
 		case reflect.String:
 			allErrs = append(allErrs, validateString(name, val.String(), cl)...)
@@ -128,13 +129,18 @@ func Validate(v any) error {
 			for j := 0; j < val.Len(); j++ {
 				elem := val.Index(j)
 				elemName := fmt.Sprintf("%s[%d]", name, j)
+				//nolint:exhaustive
 				switch elem.Kind() {
 				case reflect.String:
 					allErrs = append(allErrs, validateString(elemName, elem.String(), cl)...)
 				case reflect.Int:
 					allErrs = append(allErrs, validateInt(elemName, int(elem.Int()), cl)...)
+				default:
+					return fmt.Errorf("invalid slice elem kind: %s", elem.Kind())
 				}
 			}
+		default:
+			return fmt.Errorf("invalid kind: %s", f.Type.Kind())
 		}
 	}
 
