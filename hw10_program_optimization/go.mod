@@ -1,8 +1,6 @@
 module github.com/dimedim/hw-test/hw10_program_optimization
 
-go 1.23.0
-
-toolchain go1.24.2
+go 1.22.0
 
 require (
 	github.com/mailru/easyjson v0.9.0
