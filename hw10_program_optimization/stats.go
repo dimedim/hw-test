@@ -1,13 +1,12 @@
 package hw10programoptimization
 
 import (
-	"encoding/json"
-	"fmt"
+	"bufio"
 	"io"
-	"regexp"
 	"strings"
 )
 
+//go:generate easyjson -all stats.go
 type User struct {
 	ID       int
 	Name     string
@@ -21,46 +20,52 @@ type User struct {
 type DomainStat map[string]int
 
 func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
-	u, err := getUsers(r)
-	if err != nil {
-		return nil, fmt.Errorf("get users error: %w", err)
-	}
-	return countDomains(u, domain)
-}
+	scanner := bufio.NewScanner(r)
+	suffix := "." + strings.ToLower(domain)
+	resStat := make(DomainStat)
 
-type users [100_000]User
-
-func getUsers(r io.Reader) (result users, err error) {
-	content, err := io.ReadAll(r)
-	if err != nil {
-		return
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for i, line := range lines {
-		var user User
-		if err = json.Unmarshal([]byte(line), &user); err != nil {
-			return
+	for scanner.Scan() {
+		line := scanner.Bytes()
+		if len(line) == 0 {
+			continue
 		}
-		result[i] = user
-	}
-	return
-}
-
-func countDomains(u users, domain string) (DomainStat, error) {
-	result := make(DomainStat)
-
-	for _, user := range u {
-		matched, err := regexp.Match("\\."+domain, []byte(user.Email))
-		if err != nil {
+		var user User
+		if err := user.UnmarshalJSON(line); err != nil {
 			return nil, err
 		}
-
-		if matched {
-			num := result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])]
-			num++
-			result[strings.ToLower(strings.SplitN(user.Email, "@", 2)[1])] = num
+		AtIdx := strings.LastIndex(user.Email, "@")
+		if AtIdx < 0 {
+			continue
+		}
+		domEmail := strings.ToLower(user.Email[AtIdx+1:])
+		if strings.HasSuffix(domEmail, suffix) {
+			resStat[domEmail]++
 		}
 	}
-	return result, nil
+	return resStat, nil
 }
+
+// without easy json
+// func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
+// 	decoder := json.NewDecoder(r)
+// 	suffix := "." + strings.ToLower(domain)
+// 	resStat := make(DomainStat)
+// 	for {
+// 		var user User
+// 		err := decoder.Decode(&user)
+// 		if err == io.EOF {
+// 			break
+// 		} else if err != nil {
+// 			return nil, err
+// 		}
+// 		AtIdx := strings.LastIndex(user.Email, "@")
+// 		if AtIdx < 0 {
+// 			continue
+// 		}
+// 		domEmail := strings.ToLower(user.Email[AtIdx+1:])
+// 		if strings.HasSuffix(domEmail, suffix) {
+// 			resStat[domEmail]++
+// 		}
+// 	}
+// 	return resStat, nil
+// }
