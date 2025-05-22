@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -41,10 +42,35 @@ type Notification struct {
 */
 
 type EventStorage interface {
-	CreateEvent(ctx context.Context)
-	UpdateEvent(ctx context.Context)
-	DeleteEvent(ctx context.Context)
-	GetEventByDay(ctx context.Context)
-	GetEventByWeek(ctx context.Context)
-	GetEventByMounth(ctx context.Context)
+	CreateEvent(
+		ctx context.Context,
+		e *Event,
+	)
+	UpdateEvent(
+		ctx context.Context,
+		eventID string,
+		e *Event,
+	) error
+
+	DeleteEvent(
+		ctx context.Context,
+		eventID string,
+	) error
+	GetEventByDay(
+		ctx context.Context,
+		eventID string,
+		day time.Time,
+	) ([]*Event, error)
+
+	GetEventByWeek(ctx context.Context,
+		eventID string,
+		week time.Time,
+	) ([]*Event, error)
+
+	GetEventByMounth(ctx context.Context,
+		eventID string,
+		mounth time.Time,
+	) ([]*Event, error)
 }
+
+var ErrEventNotExists = errors.New("event not exists")

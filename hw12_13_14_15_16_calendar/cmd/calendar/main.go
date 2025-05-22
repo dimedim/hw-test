@@ -1,10 +1,15 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"time"
 
 	"github.com/dimedim/hw-test/hw12_13_14_15_calendar/internal/config"
+	"github.com/dimedim/hw-test/hw12_13_14_15_calendar/internal/logger"
+	"github.com/dimedim/hw-test/hw12_13_14_15_calendar/internal/storage"
+	memorystorage "github.com/dimedim/hw-test/hw12_13_14_15_calendar/internal/storage/memory"
 )
 
 var configFile string
@@ -25,9 +30,19 @@ func main() {
 
 	config := config.LoadConfig(configFile)
 	fmt.Println("config -->: ", config)
-	// logg := logger.New(config.Logger.Level)
+	logg := logger.New(config.Logger.Level)
+	logg.Info("awdawdawd")
 
-	// storage := memorystorage.New()
+	stor := memorystorage.New()
+
+	for {
+
+		testEvent := &storage.Event{ID: "123", CreatedAt: time.Now().UTC()}
+		stor.CreateEvent(context.Background(), testEvent)
+
+		fmt.Println(stor.DB["123"])
+		time.Sleep(time.Minute)
+	}
 	// calendar := app.New(logg, storage)
 
 	// server := internalhttp.NewServer(logg, calendar)
