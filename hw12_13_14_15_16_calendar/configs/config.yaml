@@ -1,5 +1,12 @@
-[logger]
-level = "INFO"
+# [logger]
+# level = "INFO"
 
-# TODO
-# ...
+# # TODO
+# # ...
+
+logger:
+  level: INFO
+
+app:
+  port: 8000
+  host: localhost
