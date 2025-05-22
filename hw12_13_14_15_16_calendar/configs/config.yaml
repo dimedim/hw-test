@@ -10,3 +10,12 @@ logger:
 app:
   port: 8000
   host: localhost
+  db_type: memory
+
+database:
+  username: "postgres"
+  password: "postgres"
+  db_name: "my_database1"
+  host: "db"
+  port: "5432"
+  
