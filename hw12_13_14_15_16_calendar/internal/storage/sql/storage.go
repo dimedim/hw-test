@@ -29,11 +29,8 @@ CREATE TABLE place (
 // database drivers;  pq will exec them all, sqlite3 won't, ymmv
 //     db.MustExec(schema)
 
-type Storage struct { // TODO
+type Storage struct {
 	DB *sqlx.DB
-
-	// //! TODO: заглушка, нужно убрать
-	// storage.EventStorage
 }
 
 func New(db *sqlx.DB) *Storage {

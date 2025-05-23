@@ -50,7 +50,6 @@ func main() {
 		pgxConn := database.MustConnectDatabase(ctx, config)
 		psqlStorage := sqlstorage.New(pgxConn)
 		storr = psqlStorage
-		// _ = psqlStorage
 	default:
 		storr = memorystorage.New()
 	}
