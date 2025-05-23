@@ -7,70 +7,34 @@ import (
 )
 
 type Event struct {
-	ID        string
-	Title     string
-	Desc      string `json:"desc,omitempty"`
-	UserID    string
+	ID          string
+	UserID      string
+	Title       string
+	Description string `json:"description,omitempty"`
+
+	StartsAt     time.Time     `json:"starts_at"`
+	EndsAt       time.Time     `json:"ends_at,omitempty"`
+	NotifyOffset time.Duration `json:"notify_offset,omitempty"`
+
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Deadline  time.Time
-	Notify    time.Time `json:"notify,omitempty"`
 }
-
-/*
-   ID события;
-   Заголовок события;
-   Дата события;
-   Пользователь, которому отправлять.
-*/
 
 type Notification struct {
-	EventID    string
-	EventTitle string
-	EventDate  time.Time
-	UserID     string
+	EventID  string
+	Title    string
+	StartsAt time.Time
+	UserID   string
 }
 
-/*
-? Описание методов эндпоинтов:?
-    Создать (событие);
-    Обновить (ID события, событие);
-    Удалить (ID события);
-    СписокСобытийНаДень (дата);
-    СписокСобытийНаНеделю (дата начала недели);
-    СписокСобытийНaМесяц (дата начала месяца).
-*/
-
 type EventStorage interface {
-	CreateEvent(
-		ctx context.Context,
-		e *Event,
-	)
-	UpdateEvent(
-		ctx context.Context,
-		eventID string,
-		e *Event,
-	) error
+	CreateEvent(ctx context.Context, e *Event) error
+	UpdateEvent(ctx context.Context, eventID string, e *Event) error
+	DeleteEvent(ctx context.Context, eventID string) error
 
-	DeleteEvent(
-		ctx context.Context,
-		eventID string,
-	) error
-	GetEventByDay(
-		ctx context.Context,
-		eventID string,
-		day time.Time,
-	) ([]*Event, error)
-
-	GetEventByWeek(ctx context.Context,
-		eventID string,
-		week time.Time,
-	) ([]*Event, error)
-
-	GetEventByMounth(ctx context.Context,
-		eventID string,
-		mounth time.Time,
-	) ([]*Event, error)
+	ListEventsByDay(ctx context.Context, userID string, day time.Time) ([]*Event, error)
+	ListEventsByWeek(ctx context.Context, userID string, week time.Time) ([]*Event, error)
+	ListEventsByMonth(ctx context.Context, userID string, month time.Time) ([]*Event, error)
 }
 
 var ErrEventNotExists = errors.New("event not exists")

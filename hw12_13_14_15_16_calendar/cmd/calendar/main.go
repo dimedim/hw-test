@@ -40,16 +40,17 @@ func main() {
 	logg := logger.New(config.Logger.Level)
 
 	dummyCheck(logg)
+	ctx := context.Background()
 
 	var storr app.Storage
 	switch config.App.DBType {
 	case "memory":
 		storr = memorystorage.New()
 	case "postgres":
-		pgxConn := database.InitDatabase(context.Background(), config)
+		pgxConn := database.MustConnectDatabase(ctx, config)
 		psqlStorage := sqlstorage.New(pgxConn)
-		// storr = psqlStorage
-		_ = psqlStorage
+		storr = psqlStorage
+		// _ = psqlStorage
 	default:
 		storr = memorystorage.New()
 	}
@@ -57,17 +58,17 @@ func main() {
 	calendar := app.New(logg, storr)
 	server := internalhttp.NewServer(logg, calendar)
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
+	ctx, cancel := signal.NotifyContext(ctx,
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
 	go func() {
 		<-ctx.Done()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*3)
 		defer cancel()
 
-		if err := server.Stop(ctx); err != nil {
+		if err := server.Stop(ctxTimeout); err != nil {
 			logg.Error("failed to stop http server: " + err.Error())
 		}
 	}()

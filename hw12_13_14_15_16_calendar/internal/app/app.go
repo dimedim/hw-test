@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"time"
 
 	"github.com/dimedim/hw-test/hw12_13_14_15_calendar/internal/storage"
 )
@@ -16,35 +15,7 @@ type Logger interface { // TODO
 }
 
 type Storage interface { // TODO
-	CreateEvent(
-		ctx context.Context,
-		e *storage.Event,
-	)
-	UpdateEvent(
-		ctx context.Context,
-		eventID string,
-		e *storage.Event,
-	) error
-
-	DeleteEvent(
-		ctx context.Context,
-		eventID string,
-	) error
-	GetEventByDay(
-		ctx context.Context,
-		eventID string,
-		day time.Time,
-	) ([]*storage.Event, error)
-
-	GetEventByWeek(ctx context.Context,
-		eventID string,
-		week time.Time,
-	) ([]*storage.Event, error)
-
-	GetEventByMounth(ctx context.Context,
-		eventID string,
-		mounth time.Time,
-	) ([]*storage.Event, error)
+	storage.EventStorage
 }
 
 func New(logger Logger, storage Storage) *App {

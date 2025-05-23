@@ -23,10 +23,11 @@ func New() *Storage {
 func (s *Storage) CreateEvent(
 	ctx context.Context,
 	e *storage.Event,
-) {
+) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.DB[e.ID] = e
+	return nil
 }
 
 func (s *Storage) UpdateEvent(
@@ -54,52 +55,58 @@ func (s *Storage) DeleteEvent(
 	return nil
 }
 
-func (s *Storage) GetEventByDay(
+func (s *Storage) ListEventsByDay(
 	ctx context.Context,
-	eventID string,
+	userID string,
 	day time.Time,
 ) ([]*storage.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	res := make([]*storage.Event, 50)
+	res := make([]*storage.Event, 0, len(s.DB))
 	for _, ev := range s.DB {
-		if ev.Deadline.Compare(day) >= 0 && ev.Deadline.Compare(day.Add(time.Hour*24)) < -1 {
-			res = append(res, ev)
+		if userID == ev.UserID {
+			if ev.StartsAt.Compare(day) >= 0 && ev.StartsAt.Compare(day.Add(time.Hour*24)) < -1 {
+				res = append(res, ev)
+			}
 		}
 	}
 	return res, nil
 }
 
-func (s *Storage) GetEventByWeek(
+func (s *Storage) ListEventsByWeek(
 	ctx context.Context,
-	eventID string,
+	userID string,
 	week time.Time,
 ) ([]*storage.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	res := make([]*storage.Event, 50)
+	res := make([]*storage.Event, 0, len(s.DB))
 	for _, ev := range s.DB {
-		if ev.Deadline.Compare(week) >= 0 && ev.Deadline.Compare(week.Add(time.Hour*24)) < -1 {
-			res = append(res, ev)
+		if userID == ev.UserID {
+			if ev.StartsAt.Compare(week) >= 0 && ev.StartsAt.Compare(week.AddDate(0, 0, 7)) < -1 {
+				res = append(res, ev)
+			}
 		}
 	}
 	return res, nil
 }
 
-func (s *Storage) GetEventByMounth(
+func (s *Storage) ListEventsByMonth(
 	ctx context.Context,
-	eventID string,
-	mounth time.Time,
+	userID string,
+	month time.Time,
 ) ([]*storage.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	res := make([]*storage.Event, 50)
+	res := make([]*storage.Event, 0, len(s.DB))
 	for _, ev := range s.DB {
-		if ev.Deadline.Compare(mounth) >= 0 && ev.Deadline.Compare(mounth.Add(time.Hour*24)) < -1 {
-			res = append(res, ev)
+		if userID == ev.UserID {
+			if ev.StartsAt.Compare(month) >= 0 && ev.StartsAt.Compare(month.AddDate(0, 1, 0)) < -1 {
+				res = append(res, ev)
+			}
 		}
 	}
 	return res, nil
