@@ -2,25 +2,35 @@ package app
 
 import (
 	"context"
+	"time"
+
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/models"
+	"github.com/google/uuid"
 )
 
-type App struct { // TODO
+type EventStorage interface {
+	CreateEvent(ctx context.Context, e *models.Event) error
+	UpdateEvent(ctx context.Context, eventID string, e *models.Event) error
+	DeleteEvent(ctx context.Context, eventID string) error
+
+	ListEventsByDay(ctx context.Context, userID string, day time.Time) ([]*models.Event, error)
+	ListEventsByWeek(ctx context.Context, userID string, week time.Time) ([]*models.Event, error)
+	ListEventsByMonth(ctx context.Context, userID string, month time.Time) ([]*models.Event, error)
+
+	Close() error
 }
 
-type Logger interface { // TODO
+type App struct {
+	Stor EventStorage
 }
 
-type Storage interface { // TODO
+func New(storage EventStorage) *App {
+	return &App{
+		Stor: storage,
+	}
 }
 
-func New(logger Logger, storage Storage) *App {
-	return &App{}
+func (a *App) CreateEvent(ctx context.Context, event *models.Event) error {
+	event.ID = uuid.NewString()
+	return a.Stor.CreateEvent(ctx, event)
 }
-
-func (a *App) CreateEvent(ctx context.Context, id, title string) error {
-	// TODO
-	return nil
-	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
-}
-
-// TODO

@@ -2,16 +2,31 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"flag"
+	"fmt"
+	"io"
+	"log"
+	"log/slog"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/app"
-	"github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/fixme_my_friend/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/database"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/app"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/config"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/handlers"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/models"
+	internalhttp "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/http"
+	mware "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/middleware"
+	memorystorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/memory"
+	sqlstorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/sql"
+	_ "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/migrations"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/pkg/logger"
+	"github.com/gorilla/mux"
+	goose "github.com/pressly/goose/v3"
 )
 
 var configFile string
@@ -24,38 +39,96 @@ func main() {
 	flag.Parse()
 
 	if flag.Arg(0) == "version" {
-		printVersion()
+		PrintVersion()
 		return
 	}
+	config := config.MustLoad(configFile)
+	// logger
+	filename := filepath.Join(config.Logger.LogFolder, time.Now().Format("2006-01-02_15-04-05")+".txt")
+	file, err := logger.OpenLogFile(filename)
+	if err != nil {
+		log.Println("cant open log file", err)
+	}
+	defer file.Close()
+	multOutput := io.MultiWriter(os.Stdout, file)
+	multLogger := logger.New(config.Logger.Level, multOutput)
+	log := logger.New(config.Logger.Level, os.Stdout)
 
-	config := NewConfig()
-	logg := logger.New(config.Logger.Level)
+	// app
+	ctx := context.Background()
 
-	storage := memorystorage.New()
-	calendar := app.New(logg, storage)
+	storr := NewStorage(ctx, config)
+	defer storr.Close()
+	calendar := app.New(storr)
+	handler := handlers.NewHadnlers(log, calendar)
 
-	server := internalhttp.NewServer(logg, calendar)
+	router := mux.NewRouter()
+	router.Use(mware.LoggingMiddleware(multLogger))
 
-	ctx, cancel := signal.NotifyContext(context.Background(),
+	server := internalhttp.NewServer(config, log, router, handler)
+	server.RegisterRoutes()
+
+	// Shutdown
+	ctx, cancel := signal.NotifyContext(ctx,
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
 	go func() {
 		<-ctx.Done()
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		ctxTimeout, cancel := context.WithTimeout(ctx, time.Second*3)
 		defer cancel()
 
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
+		if err := server.Stop(ctxTimeout); err != nil {
+			log.Error("failed to stop http server: " + err.Error())
 		}
 	}()
 
-	logg.Info("calendar is running...")
-
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
+	if err := server.Start(); err != nil {
+		log.Error("server error", slog.String("error", err.Error()))
 		cancel()
 		os.Exit(1) //nolint:gocritic
 	}
+}
+
+func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
+	switch config.App.DBType {
+	case "memory":
+		return memorystorage.New()
+	case "postgres":
+		pgxConn := database.MustConnectDatabase(ctx, config)
+		psqlStorage := sqlstorage.New(pgxConn)
+		if err := psqlStorage.Connect(ctx); err != nil {
+			log.Fatal("cant connect to db: ", err)
+		}
+		migrate(ctx, pgxConn.DB, config.DB.MigrationFilepath)
+		return psqlStorage
+	}
+	slog.Warn("storage type not set", slog.String("type", config.App.DBType))
+	return memorystorage.New()
+}
+
+func DummyCheck(logg logger.Logger) {
+	logg.Info("dummy check")
+
+	stor := memorystorage.New()
+
+	for {
+		testEvent := &models.Event{ID: "123", CreatedAt: time.Now().UTC()}
+		stor.CreateEvent(context.Background(), testEvent)
+
+		fmt.Println(stor.DB["123"])
+		time.Sleep(time.Second * 10)
+	}
+}
+
+func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
+	err := goose.UpContext(ctx, db, migrationsPath)
+	if err != nil {
+		log.Fatal("migration error: %w", err)
+	}
+
+	// if err := goose.DownContext(ctx, db, migrationsPath); err != nil {
+	// 	log.Fatal("down migration: %w", err)
+	// }
 }

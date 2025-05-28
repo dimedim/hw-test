@@ -1,5 +1,19 @@
-[logger]
-level = "INFO"
+logger:
+  level: info
+  log_folder: "./logs"
 
-# TODO
-# ...
+app:
+  port: 8080
+  host: localhost
+  db_type: memory
+  timeout: 4s
+  idle_timeout: 30s
+
+database:
+  username: calendar
+  password: calendar
+  db_name: calendar
+  host: "localhost"
+  port: "5432"
+  migrations_folder: "./migrations"
+  
