@@ -10,11 +10,12 @@ import (
 
 type Config struct {
 	Logger LoggerConf `yaml:"logger"`
-	App    App        `yaml:"app"`
+	HTTP   HTTPServer `yaml:"http_server"`
 	DB     PostgresDB `yaml:"database"`
+	GRPC   GRPCServer `yaml:"grpc_server"`
 }
 
-type App struct {
+type HTTPServer struct {
 	Port        string        `yaml:"port" env:"APP_PORT" env-default:"8080"`
 	Host        string        `yaml:"host" env:"APP_HOST" env-default:"localhost"`
 	DBType      string        `yaml:"db_type" env:"DB_TYPE"`
@@ -33,6 +34,9 @@ type PostgresDB struct {
 	Host              string `yaml:"host" env:"DB_HOST" env-default:"localhost"`
 	Port              string `yaml:"port" env:"DB_PORT" env-default:"5432"`
 	MigrationFilepath string `yaml:"migrations_folder"`
+}
+
+type GRPCServer struct {
 }
 
 // Приоритеты:

@@ -24,16 +24,16 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config, log logger.Logger, router *mux.Router, handlers Handlers) *Server {
-	addr := fmt.Sprintf("%s:%s", cfg.App.Host, cfg.App.Port)
+	addr := fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port)
 	return &Server{
 		Cfg: cfg,
 		Log: log,
 		HTTPServer: &http.Server{
 			Addr:         addr,
 			Handler:      router,
-			ReadTimeout:  cfg.App.Timeout,
-			WriteTimeout: cfg.App.Timeout,
-			IdleTimeout:  cfg.App.IdleTimeout,
+			ReadTimeout:  cfg.HTTP.Timeout,
+			WriteTimeout: cfg.HTTP.Timeout,
+			IdleTimeout:  cfg.HTTP.IdleTimeout,
 		},
 		Router:   router,
 		Handlers: handlers,

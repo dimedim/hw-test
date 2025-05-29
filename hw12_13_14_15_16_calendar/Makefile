@@ -66,3 +66,16 @@ up:
 	docker compose up -d
 	sleep 5
 	@$(MAKE) run
+#-----------------------------------------------------------------------
+PROTO_DIR= api
+OUT_DIR= api/grpcevents
+PROTO_FILE= $(PROTO_DIR)/EventService.proto
+
+generate:
+# protoc --go_out=$(GRPC_PATH) --go-grpc_out=$(GRPC_PATH) --go-grpc_opt=paths=source_relative --go_opt=paths=source_relative api/*.proto
+# protoc -I $(GRPC_PATH)
+	mkdir -p $(OUT_DIR)
+	protoc --proto_path=$(PROTO_DIR) \
+	--go_out=$(OUT_DIR) --go_opt=paths=source_relative \
+	--go-grpc_out=$(OUT_DIR) --go-grpc_opt=paths=source_relative \
+	$(PROTO_FILE)

@@ -1,7 +1,12 @@
 syntax = "proto3";
 
 package event;
+option go_package = "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/api/grpcevents;grpcevents";
 
 message Event {
-    // TODO
+    string id = 1;
 }
+
+service Todo{
+    rpc TODO (Event) returns (Event){}
+}   

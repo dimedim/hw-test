@@ -92,7 +92,7 @@ func main() {
 }
 
 func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
-	switch config.App.DBType {
+	switch config.HTTP.DBType {
 	case "memory":
 		return memorystorage.New()
 	case "postgres":
@@ -104,7 +104,7 @@ func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
 		migrate(ctx, pgxConn.DB, config.DB.MigrationFilepath)
 		return psqlStorage
 	}
-	slog.Warn("storage type not set", slog.String("type", config.App.DBType))
+	slog.Warn("storage type not set", slog.String("type", config.HTTP.DBType))
 	return memorystorage.New()
 }
 
