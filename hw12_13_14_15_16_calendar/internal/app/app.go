@@ -9,8 +9,8 @@ import (
 )
 
 type EventStorage interface {
-	CreateEvent(ctx context.Context, e *models.Event) error
-	UpdateEvent(ctx context.Context, eventID string, e *models.Event) error
+	CreateEvent(ctx context.Context, e *models.Event) (*models.Event, error)
+	UpdateEvent(ctx context.Context, eventID string, e *models.Event) (*models.Event, error)
 	DeleteEvent(ctx context.Context, eventID string) error
 
 	ListEventsByDay(ctx context.Context, userID string, day time.Time) ([]*models.Event, error)
@@ -21,16 +21,16 @@ type EventStorage interface {
 }
 
 type App struct {
-	Stor EventStorage
+	Repo EventStorage
 }
 
 func New(storage EventStorage) *App {
 	return &App{
-		Stor: storage,
+		Repo: storage,
 	}
 }
 
-func (a *App) CreateEvent(ctx context.Context, event *models.Event) error {
+func (a *App) CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error) {
 	event.ID = uuid.NewString()
-	return a.Stor.CreateEvent(ctx, event)
+	return a.Repo.CreateEvent(ctx, event)
 }

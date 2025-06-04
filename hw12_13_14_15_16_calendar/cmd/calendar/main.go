@@ -4,22 +4,24 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"log/slog"
+	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
 
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/api/grpcevents"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/database"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/app"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/config"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/handlers"
-	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/models"
+	internalgrpc "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/grpc"
 	internalhttp "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/http"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/interceptors"
 	mware "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/middleware"
 	memorystorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/memory"
 	sqlstorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/sql"
@@ -27,6 +29,7 @@ import (
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/pkg/logger"
 	"github.com/gorilla/mux"
 	goose "github.com/pressly/goose/v3"
+	"google.golang.org/grpc"
 )
 
 var configFile string
@@ -84,6 +87,8 @@ func main() {
 		}
 	}()
 
+	go StartGRPCServer(ctx, config, log, storr)
+
 	if err := server.Start(); err != nil {
 		log.Error("server error", slog.String("error", err.Error()))
 		cancel()
@@ -108,20 +113,6 @@ func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
 	return memorystorage.New()
 }
 
-func DummyCheck(logg logger.Logger) {
-	logg.Info("dummy check")
-
-	stor := memorystorage.New()
-
-	for {
-		testEvent := &models.Event{ID: "123", CreatedAt: time.Now().UTC()}
-		stor.CreateEvent(context.Background(), testEvent)
-
-		fmt.Println(stor.DB["123"])
-		time.Sleep(time.Second * 10)
-	}
-}
-
 func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
 	err := goose.UpContext(ctx, db, migrationsPath)
 	if err != nil {
@@ -131,4 +122,36 @@ func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
 	// if err := goose.DownContext(ctx, db, migrationsPath); err != nil {
 	// 	log.Fatal("down migration: %w", err)
 	// }
+}
+
+func StartGRPCServer(
+	ctx context.Context,
+	cfg *config.Config,
+	logger logger.Logger,
+	storage internalgrpc.EventStorage,
+) {
+
+	grpcSrv := grpc.NewServer(
+		grpc.UnaryInterceptor(interceptors.LogInterceptor(logger)),
+	)
+
+	server := internalgrpc.New(storage, cfg)
+
+	grpcevents.RegisterCalendarServiceServer(grpcSrv, server)
+
+	listener, err := net.Listen("tcp", ":"+cfg.GRPC.Port)
+	if err != nil {
+		log.Fatal(err)
+	}
+	slog.Info("GRPC starts", slog.String("port", cfg.GRPC.Port))
+
+	go func() {
+		if err := grpcSrv.Serve(listener); err != nil {
+			log.Fatal("GRPC server stoped", err)
+		}
+	}()
+
+	<-ctx.Done()
+	slog.Info("GRPC graceful shutting down")
+	grpcSrv.GracefulStop()
 }

@@ -37,12 +37,13 @@ type PostgresDB struct {
 }
 
 type GRPCServer struct {
+	Port string `yaml:"port"`
 }
 
 // Приоритеты:
 // 1) env и .env файл соответственно;
-// 2)Ямл файл
-// 3)дефолт если не задано ничего. Если переменная пустая то останется пустой!
+// 2) Ямл файл
+// 3) Дефолт если не задано ничего. Если переменная пустая то останется пустой!
 func MustLoad(filepath string) *Config {
 	if err := godotenv.Load(); err != nil {
 		panic("godotenv")

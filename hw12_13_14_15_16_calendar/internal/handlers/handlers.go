@@ -8,7 +8,7 @@ import (
 )
 
 type Application interface {
-	CreateEvent(ctx context.Context, event *models.Event) error
+	CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error)
 }
 
 type Hadlers struct {

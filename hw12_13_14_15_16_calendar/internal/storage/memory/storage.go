@@ -21,32 +21,32 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) CreateEvent(ctx context.Context, e *models.Event) error {
+func (s *Storage) CreateEvent(ctx context.Context, e *models.Event) (*models.Event, error) {
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("create event: %w", ctx.Err())
+		return nil, fmt.Errorf("create event: %w", ctx.Err())
 	default:
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		e.CreatedAt = time.Now().UTC()
 		s.DB[e.ID] = e
-		return nil
+		return e, nil
 	}
 }
 
-func (s *Storage) UpdateEvent(ctx context.Context, eventID string, e *models.Event) error {
+func (s *Storage) UpdateEvent(ctx context.Context, eventID string, e *models.Event) (*models.Event, error) {
 	select {
 	case <-ctx.Done():
-		return fmt.Errorf("update event: %w", ctx.Err())
+		return nil, fmt.Errorf("update event: %w", ctx.Err())
 	default:
 		s.mu.Lock()
 		defer s.mu.Unlock()
 		if !s.CheckExistance(eventID) {
-			return models.ErrEventNotExists
+			return nil, models.ErrEventNotExists
 		}
 		e.UpdatedAt = time.Now().UTC()
 		s.DB[eventID] = e
-		return nil
+		return e, nil
 	}
 }
 

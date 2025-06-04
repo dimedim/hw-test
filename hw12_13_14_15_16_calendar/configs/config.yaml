@@ -18,3 +18,5 @@ database:
   migrations_folder: "./migrations"
   
 grpc_server:
+  port: 50051
+  host: localhost

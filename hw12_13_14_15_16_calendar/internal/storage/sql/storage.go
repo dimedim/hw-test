@@ -28,7 +28,7 @@ func (s *Storage) Close() error {
 func (s *Storage) CreateEvent(
 	ctx context.Context,
 	e *models.Event,
-) error {
+) (*models.Event, error) {
 	const query = `INSERT INTO events(id, user_id, title, description, 
 	starts_at, ends_at, notify_offset)
 	VALUES (:id, :user_id, :title, :description, 
@@ -36,16 +36,16 @@ func (s *Storage) CreateEvent(
 
 	_, err := s.DB.NamedExecContext(ctx, query, e)
 	if err != nil {
-		return fmt.Errorf("new event insert: %w", err)
+		return nil, fmt.Errorf("new event insert: %w", err)
 	}
-	return nil
+	return e, nil
 }
 
 func (s *Storage) UpdateEvent(
 	ctx context.Context,
 	eventID string,
 	e *models.Event,
-) error {
+) (*models.Event, error) {
 	e.UpdatedAt = time.Now()
 	e.ID = eventID
 
@@ -61,16 +61,16 @@ func (s *Storage) UpdateEvent(
 
 	res, err := s.DB.NamedExecContext(ctx, query, e)
 	if err != nil {
-		return fmt.Errorf("update event exec: %w", err)
+		return nil, fmt.Errorf("update event exec: %w", err)
 	}
 	count, err := res.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("update event RowsAffected: %w", err)
+		return nil, fmt.Errorf("update event RowsAffected: %w", err)
 	}
 	if count == 0 {
-		return models.ErrEventNotExists
+		return nil, models.ErrEventNotExists
 	}
-	return nil
+	return e, nil
 }
 
 func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
