@@ -2,5 +2,7 @@ package models
 
 import "errors"
 
-var ErrEventNotExists = errors.New("event not exists")
-var ErrEventNotSet = errors.New("event not set")
+var (
+	ErrEventNotExists = errors.New("event not exists")
+	ErrEventNotSet    = errors.New("event not set")
+)

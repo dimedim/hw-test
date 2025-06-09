@@ -87,7 +87,8 @@ func main() {
 		}
 	}()
 
-	go StartGRPCServer(ctx, config, log, storr)
+	// gRPC
+	StartGRPCServer(ctx, config, log, storr)
 
 	if err := server.Start(); err != nil {
 		log.Error("server error", slog.String("error", err.Error()))
@@ -130,7 +131,6 @@ func StartGRPCServer(
 	logger logger.Logger,
 	storage internalgrpc.EventStorage,
 ) {
-
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptors.LogInterceptor(logger)),
 	)
@@ -143,15 +143,16 @@ func StartGRPCServer(
 	if err != nil {
 		log.Fatal(err)
 	}
-	slog.Info("GRPC starts", slog.String("port", cfg.GRPC.Port))
+	logger.Info("GRPC starts", slog.String("port", cfg.GRPC.Port))
 
 	go func() {
 		if err := grpcSrv.Serve(listener); err != nil {
 			log.Fatal("GRPC server stoped", err)
 		}
 	}()
-
-	<-ctx.Done()
-	slog.Info("GRPC graceful shutting down")
-	grpcSrv.GracefulStop()
+	go func() {
+		<-ctx.Done()
+		slog.Info("GRPC graceful shutting down")
+		grpcSrv.GracefulStop()
+	}()
 }

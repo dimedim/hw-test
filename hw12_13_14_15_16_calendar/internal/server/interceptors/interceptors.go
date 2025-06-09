@@ -17,7 +17,6 @@ func LogInterceptor(logger logger.Logger) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (resp any, err error) {
-
 		clientAddr := "unknown"
 		if p, ok := peer.FromContext(ctx); ok {
 			clientAddr = p.Addr.String()
@@ -30,7 +29,7 @@ func LogInterceptor(logger logger.Logger) grpc.UnaryServerInterceptor {
 		code := status.Code(err)
 
 		if err != nil {
-			slog.Error("GRPC error",
+			logger.Error("GRPC error",
 				slog.String("method", info.FullMethod),
 				slog.String("duration", duration.String()),
 				slog.String("client", clientAddr),
@@ -38,7 +37,7 @@ func LogInterceptor(logger logger.Logger) grpc.UnaryServerInterceptor {
 				slog.String("ERR", err.Error()),
 			)
 		} else {
-			slog.Info("GRPC response",
+			logger.Info("GRPC response",
 				slog.String("method", info.FullMethod),
 				slog.String("duration", duration.String()),
 				slog.String("client", clientAddr),
