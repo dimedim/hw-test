@@ -38,6 +38,10 @@ func init() {
 	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
 }
 
+// TODO: Сделать единый сторэйдж интерфейс и апп интерфейс,
+//  а то он повторяется в нескольких местах, gRPC HTTP
+//  итд и при изменении будет сложно
+
 func main() {
 	flag.Parse()
 

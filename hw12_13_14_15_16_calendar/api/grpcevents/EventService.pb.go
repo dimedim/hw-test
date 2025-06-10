@@ -206,7 +206,7 @@ func (x *CreateEventResponse) GetEvent() *Event {
 
 type UpdateEventRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	EventId       string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	Event         *Event                 `protobuf:"bytes,2,opt,name=event,proto3" json:"event,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -242,9 +242,9 @@ func (*UpdateEventRequest) Descriptor() ([]byte, []int) {
 	return file_EventService_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *UpdateEventRequest) GetId() string {
+func (x *UpdateEventRequest) GetEventId() string {
 	if x != nil {
-		return x.Id
+		return x.EventId
 	}
 	return ""
 }
@@ -302,7 +302,7 @@ func (x *UpdateEventResponse) GetEvent() *Event {
 
 type DeleteEventRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	EventId       string                 `protobuf:"bytes,1,opt,name=event_id,json=eventId,proto3" json:"event_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -337,9 +337,9 @@ func (*DeleteEventRequest) Descriptor() ([]byte, []int) {
 	return file_EventService_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *DeleteEventRequest) GetId() string {
+func (x *DeleteEventRequest) GetEventId() string {
 	if x != nil {
-		return x.Id
+		return x.EventId
 	}
 	return ""
 }
@@ -486,7 +486,7 @@ func (x *ListDayResponse) GetEvents() []*Event {
 
 type ListWeekRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	WeekStart     *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=week_start,json=weekStart,proto3" json:"week_start,omitempty"`
+	Date          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -522,9 +522,9 @@ func (*ListWeekRequest) Descriptor() ([]byte, []int) {
 	return file_EventService_proto_rawDescGZIP(), []int{9}
 }
 
-func (x *ListWeekRequest) GetWeekStart() *timestamppb.Timestamp {
+func (x *ListWeekRequest) GetDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.WeekStart
+		return x.Date
 	}
 	return nil
 }
@@ -582,7 +582,7 @@ func (x *ListWeekResponse) GetEvents() []*Event {
 
 type ListMonthRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MonthStart    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=month_start,json=monthStart,proto3" json:"month_start,omitempty"`
+	Date          *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=date,proto3" json:"date,omitempty"`
 	UserId        string                 `protobuf:"bytes,2,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -618,9 +618,9 @@ func (*ListMonthRequest) Descriptor() ([]byte, []int) {
 	return file_EventService_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *ListMonthRequest) GetMonthStart() *timestamppb.Timestamp {
+func (x *ListMonthRequest) GetDate() *timestamppb.Timestamp {
 	if x != nil {
-		return x.MonthStart
+		return x.Date
 	}
 	return nil
 }
@@ -692,30 +692,28 @@ const file_EventService_proto_rawDesc = "" +
 	"\x12CreateEventRequest\x12\"\n" +
 	"\x05event\x18\x01 \x01(\v2\f.event.EventR\x05event\"9\n" +
 	"\x13CreateEventResponse\x12\"\n" +
-	"\x05event\x18\x01 \x01(\v2\f.event.EventR\x05event\"H\n" +
-	"\x12UpdateEventRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
+	"\x05event\x18\x01 \x01(\v2\f.event.EventR\x05event\"S\n" +
+	"\x12UpdateEventRequest\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12\"\n" +
 	"\x05event\x18\x02 \x01(\v2\f.event.EventR\x05event\"9\n" +
 	"\x13UpdateEventResponse\x12\"\n" +
-	"\x05event\x18\x01 \x01(\v2\f.event.EventR\x05event\"$\n" +
-	"\x12DeleteEventRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
+	"\x05event\x18\x01 \x01(\v2\f.event.EventR\x05event\"/\n" +
+	"\x12DeleteEventRequest\x12\x19\n" +
+	"\bevent_id\x18\x01 \x01(\tR\aeventId\"C\n" +
 	"\x13DeleteEventResponse\x12,\n" +
 	"\x05empty\x18\x01 \x01(\v2\x16.google.protobuf.EmptyR\x05empty\"Y\n" +
 	"\x0eListDayRequest\x12.\n" +
 	"\x04date\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"7\n" +
 	"\x0fListDayResponse\x12$\n" +
-	"\x06events\x18\x01 \x03(\v2\f.event.EventR\x06events\"e\n" +
-	"\x0fListWeekRequest\x129\n" +
-	"\n" +
-	"week_start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\tweekStart\x12\x17\n" +
+	"\x06events\x18\x01 \x03(\v2\f.event.EventR\x06events\"Z\n" +
+	"\x0fListWeekRequest\x12.\n" +
+	"\x04date\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"8\n" +
 	"\x10ListWeekResponse\x12$\n" +
-	"\x06events\x18\x01 \x03(\v2\f.event.EventR\x06events\"h\n" +
-	"\x10ListMonthRequest\x12;\n" +
-	"\vmonth_start\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"monthStart\x12\x17\n" +
+	"\x06events\x18\x01 \x03(\v2\f.event.EventR\x06events\"[\n" +
+	"\x10ListMonthRequest\x12.\n" +
+	"\x04date\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\x04date\x12\x17\n" +
 	"\auser_id\x18\x02 \x01(\tR\x06userId\"9\n" +
 	"\x11ListMonthResponse\x12$\n" +
 	"\x06events\x18\x01 \x03(\v2\f.event.EventR\x06events2\x96\x03\n" +
@@ -769,9 +767,9 @@ var file_EventService_proto_depIdxs = []int32{
 	15, // 7: event.DeleteEventResponse.empty:type_name -> google.protobuf.Empty
 	13, // 8: event.ListDayRequest.date:type_name -> google.protobuf.Timestamp
 	0,  // 9: event.ListDayResponse.events:type_name -> event.Event
-	13, // 10: event.ListWeekRequest.week_start:type_name -> google.protobuf.Timestamp
+	13, // 10: event.ListWeekRequest.date:type_name -> google.protobuf.Timestamp
 	0,  // 11: event.ListWeekResponse.events:type_name -> event.Event
-	13, // 12: event.ListMonthRequest.month_start:type_name -> google.protobuf.Timestamp
+	13, // 12: event.ListMonthRequest.date:type_name -> google.protobuf.Timestamp
 	0,  // 13: event.ListMonthResponse.events:type_name -> event.Event
 	1,  // 14: event.CalendarService.CreateEvent:input_type -> event.CreateEventRequest
 	3,  // 15: event.CalendarService.UpdateEvent:input_type -> event.UpdateEventRequest

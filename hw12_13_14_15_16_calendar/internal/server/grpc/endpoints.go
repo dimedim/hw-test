@@ -2,7 +2,6 @@ package internalgrpc
 
 import (
 	"context"
-	"fmt"
 
 	ge "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/api/grpcevents"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/models"
@@ -15,65 +14,98 @@ func (s *GRPCServer) CreateEvent(
 	ctx context.Context,
 	req *ge.CreateEventRequest,
 ) (*ge.CreateEventResponse, error) {
-	event := req.GetEvent()
-	if event == nil {
+	requestEvent := req.GetEvent()
+	if requestEvent == nil {
 		return nil, models.ErrEventNotSet
 	}
 
-	e := gEventToEvent(event)
+	ev := GRPCToEvent(requestEvent)
 
-	created, err := s.Store.CreateEvent(ctx, e)
+	res, err := s.Store.CreateEvent(ctx, ev)
 	if err != nil {
-		return nil, fmt.Errorf("store create event")
+		return nil, err
 	}
 
 	return &ge.CreateEventResponse{
-		Event: eventToGEvent(created),
+		Event: eventToGRPC(res),
 	}, nil
 }
 
 func (s *GRPCServer) UpdateEvent(ctx context.Context, req *ge.UpdateEventRequest) (*ge.UpdateEventResponse, error) {
-	return nil, nil
+
+	requestEvent := req.GetEvent()
+	eventID := req.GetEventId()
+	if requestEvent == nil || eventID == "" {
+		return nil, models.ErrEventNotSet
+	}
+	event := GRPCToEvent(requestEvent)
+	res, err := s.Store.UpdateEvent(ctx, eventID, event)
+	if err != nil {
+		return nil, err
+	}
+	return &ge.UpdateEventResponse{
+		Event: eventToGRPC(res),
+	}, nil
 }
 
 func (s *GRPCServer) DeleteEvent(ctx context.Context, req *ge.DeleteEventRequest) (*emptypb.Empty, error) {
-	return nil, nil
+	eventID := req.GetEventId()
+	err := s.Store.DeleteEvent(ctx, eventID)
+	return nil, err
 }
 
 func (s *GRPCServer) ListDay(ctx context.Context, req *ge.ListDayRequest) (*ge.ListDayResponse, error) {
-	return nil, nil
+
+	userID := req.GetUserId()
+
+	events, err := s.Store.ListEventsByDay(ctx, userID, req.GetDate().AsTime())
+	if err != nil {
+		return nil, err
+	}
+	return &ge.ListDayResponse{Events: manyEventsToGRPC(events)}, nil
 }
 
 func (s *GRPCServer) ListWeek(ctx context.Context, req *ge.ListWeekRequest) (*ge.ListWeekResponse, error) {
-	return nil, nil
+	userID := req.GetUserId()
+
+	events, err := s.Store.ListEventsByDay(ctx, userID, req.GetDate().AsTime())
+	if err != nil {
+		return nil, err
+	}
+	return &ge.ListWeekResponse{Events: manyEventsToGRPC(events)}, nil
 }
 
 func (s *GRPCServer) ListMonth(ctx context.Context, req *ge.ListMonthRequest) (*ge.ListMonthResponse, error) {
-	return nil, nil
+	userID := req.GetUserId()
+
+	events, err := s.Store.ListEventsByMonth(ctx, userID, req.GetDate().AsTime())
+	if err != nil {
+		return nil, err
+	}
+	return &ge.ListMonthResponse{Events: manyEventsToGRPC(events)}, nil
 }
 
-func gEventToEvent(event *ge.Event) *models.Event {
+func GRPCToEvent(event *ge.Event) *models.Event {
+	if event == nil {
+		return nil
+	}
 	start := event.GetStartsAt().AsTime()
 	end := event.GetEndsAt().AsTime()
 	return &models.Event{
-		ID:          event.GetId(),
-		Title:       event.GetTitle(),
-		StartsAt:    start,
-		EndsAt:      end,
-		Description: event.GetDescription(),
-		UserID:      event.GetUserId(),
-		// TODO: need test
-		// NotifyOffset: func() time.Duration {
-		// 	if event.GetNotifyOffset() != nil {
-		// 		return event.GetNotifyOffset().AsDuration()
-		// 	}
-		// 	return 0
-		// }(),
+		ID:           event.GetId(),
+		Title:        event.GetTitle(),
+		StartsAt:     start,
+		EndsAt:       end,
+		Description:  event.GetDescription(),
+		UserID:       event.GetUserId(),
 		NotifyOffset: event.GetNotifyOffset().AsDuration(),
 	}
 }
 
-func eventToGEvent(event *models.Event) *ge.Event {
+func eventToGRPC(event *models.Event) *ge.Event {
+	if event == nil {
+		return nil
+	}
 	return &ge.Event{
 		Id:          event.ID,
 		Title:       event.Title,
@@ -88,4 +120,13 @@ func eventToGEvent(event *models.Event) *ge.Event {
 			return nil
 		}(),
 	}
+}
+
+func manyEventsToGRPC(events []*models.Event) []*ge.Event {
+	res := make([]*ge.Event, 0, len(events))
+
+	for _, v := range events {
+		res = append(res, eventToGRPC(v))
+	}
+	return res
 }

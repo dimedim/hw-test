@@ -13,6 +13,12 @@ import (
 
 type Handlers interface {
 	Hello(w http.ResponseWriter, r *http.Request)
+	CreateEvent(w http.ResponseWriter, r *http.Request)
+	UpdateEvent(w http.ResponseWriter, r *http.Request)
+	DeleteEvent(w http.ResponseWriter, r *http.Request)
+	ListEventsByDay(w http.ResponseWriter, r *http.Request)
+	ListEventsByWeek(w http.ResponseWriter, r *http.Request)
+	ListEventsByMonth(w http.ResponseWriter, r *http.Request)
 }
 
 type Server struct {
@@ -55,7 +61,27 @@ func (s *Server) GetRouter() http.Handler {
 }
 
 func (s *Server) RegisterRoutes() {
+	/*
+
+		    Создать (событие);
+		    Обновить (ID события, событие);
+		    Удалить (ID события);
+		    СписокСобытийНаДень (дата);
+		    СписокСобытийНаНеделю (дата начала недели);
+		    СписокСобытийНaМесяц (дата начала месяца).
+
+			/events POST
+	*/
 	s.Router.Use(mware.PanicRecover(s.Log))
 
 	s.Router.HandleFunc("/", s.Handlers.Hello).Methods(http.MethodGet)
+
+	events := s.Router.PathPrefix("/events").Subrouter()
+	events.HandleFunc("", s.Handlers.CreateEvent).Methods(http.MethodPost)
+	events.HandleFunc("", s.Handlers.UpdateEvent).Methods(http.MethodPatch)
+	events.HandleFunc("", s.Handlers.DeleteEvent).Methods(http.MethodDelete)
+
+	events.HandleFunc("/day", s.Handlers.ListEventsByDay).Methods(http.MethodGet)
+	events.HandleFunc("/week", s.Handlers.ListEventsByWeek).Methods(http.MethodGet)
+	events.HandleFunc("/month", s.Handlers.ListEventsByMonth).Methods(http.MethodGet)
 }
