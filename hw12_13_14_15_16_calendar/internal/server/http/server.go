@@ -78,10 +78,12 @@ func (s *Server) RegisterRoutes() {
 
 	events := s.Router.PathPrefix("/events").Subrouter()
 	events.HandleFunc("", s.Handlers.CreateEvent).Methods(http.MethodPost)
-	events.HandleFunc("", s.Handlers.UpdateEvent).Methods(http.MethodPatch)
-	events.HandleFunc("", s.Handlers.DeleteEvent).Methods(http.MethodDelete)
+	events.HandleFunc("/{event_id}", s.Handlers.UpdateEvent).Methods(http.MethodPatch, http.MethodPut)
+	events.HandleFunc("/{event_id}", s.Handlers.DeleteEvent).Methods(http.MethodDelete)
 
-	events.HandleFunc("/day", s.Handlers.ListEventsByDay).Methods(http.MethodGet)
-	events.HandleFunc("/week", s.Handlers.ListEventsByWeek).Methods(http.MethodGet)
-	events.HandleFunc("/month", s.Handlers.ListEventsByMonth).Methods(http.MethodGet)
+	// TODO: надо как-то по другому, дейт не гибко вроде как
+	//? GET /events/day/user_id?date=2025-06-10
+	events.HandleFunc("/day/{user_id}", s.Handlers.ListEventsByDay).Methods(http.MethodGet)
+	events.HandleFunc("/week/{user_id}", s.Handlers.ListEventsByWeek).Methods(http.MethodGet)
+	events.HandleFunc("/month/{user_id}", s.Handlers.ListEventsByMonth).Methods(http.MethodGet)
 }
