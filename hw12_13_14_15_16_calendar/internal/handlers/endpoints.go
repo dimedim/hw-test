@@ -108,7 +108,8 @@ func (h *Handlers) listEvents(w http.ResponseWriter, r *http.Request, period str
 
 	dateStr := r.URL.Query().Get(DateParam)
 
-	dateTime, err := time.Parse(time.RFC3339, dateStr)
+	// TODO: dateOnly or RFC3339
+	dateTime, err := time.Parse(time.DateOnly, dateStr)
 	if err != nil {
 		models.JSONError(h.Log, w, http.StatusBadRequest, "invalid date format")
 		return
