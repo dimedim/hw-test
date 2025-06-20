@@ -29,15 +29,28 @@ func (s *Storage) CreateEvent(
 	ctx context.Context,
 	e *models.Event,
 ) (*models.Event, error) {
+	// TODO: добавил updated_at
 	const query = `INSERT INTO events(id, user_id, title, description, 
-	starts_at, ends_at, notify_offset)
+	starts_at, ends_at, notify_offset, updated_at)
 	VALUES (:id, :user_id, :title, :description, 
-	:starts_at, :ends_at, :notify_offset);`
+	:starts_at, :ends_at, :notify_offset, :updated_at)
+	RETURNING created_at;`
 
-	_, err := s.DB.NamedExecContext(ctx, query, e)
+	rows, err := s.DB.NamedQueryContext(ctx, query, e)
+
 	if err != nil {
 		return nil, fmt.Errorf("new event insert: %w", err)
 	}
+	defer rows.Close()
+
+	if !rows.Next() {
+		return e, fmt.Errorf("no row returned")
+	}
+	var createdAt time.Time
+	if err := rows.Scan(&createdAt); err != nil {
+		return nil, fmt.Errorf("scan created_at: %w", err)
+	}
+	e.CreatedAt = createdAt
 	return e, nil
 }
 
@@ -46,9 +59,12 @@ func (s *Storage) UpdateEvent(
 	eventID string,
 	e *models.Event,
 ) (*models.Event, error) {
+	// upd := time.Now()
+	// e.UpdatedAt = &upd
 	e.UpdatedAt = time.Now()
 	e.ID = eventID
 
+	// TODO: сейчас возвращает нулевой created_at нужно получать актуальные данные
 	const query = `UPDATE events SET
 		title = :title,
 		description   = :description,

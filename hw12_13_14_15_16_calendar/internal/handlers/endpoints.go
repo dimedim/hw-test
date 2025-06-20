@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -16,6 +17,7 @@ func (h *Handlers) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		models.JSONError(h.Log, w, http.StatusBadRequest, "invalid JSON body")
+		h.Log.Error("create event bad request", logger.Err(err))
 		return
 	}
 
@@ -29,7 +31,6 @@ func (h *Handlers) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	// TODO: мб вынести в отдельную функцию
 	if err := json.NewEncoder(w).Encode(res); err != nil {
 		models.JSONError(h.Log, w, http.StatusInternalServerError, "internal")
 		h.Log.Error("encode JSON", logger.Err(err))
@@ -53,6 +54,10 @@ func (h *Handlers) UpdateEvent(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res, err := h.App.UpdateEvent(r.Context(), eventID, &event)
+	if errors.Is(err, models.ErrEventNotExists) {
+		models.JSONError(h.Log, w, http.StatusBadRequest, models.ErrEventNotExists.Error())
+		return
+	}
 	if err != nil {
 		models.JSONError(h.Log, w, http.StatusInternalServerError, "internal")
 		h.Log.Error("update event internal", logger.Err(err))
@@ -75,6 +80,10 @@ func (h *Handlers) DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := h.App.DeleteEvent(r.Context(), eventID)
+	if errors.Is(err, models.ErrEventNotExists) {
+		models.JSONError(h.Log, w, http.StatusBadRequest, models.ErrEventNotExists.Error())
+		return
+	}
 	if err != nil {
 		models.JSONError(h.Log, w, http.StatusInternalServerError, "internal")
 		h.Log.Error("delete event internal", logger.Err(err))
@@ -108,7 +117,6 @@ func (h *Handlers) listEvents(w http.ResponseWriter, r *http.Request, period str
 
 	dateStr := r.URL.Query().Get(DateParam)
 
-	// TODO: dateOnly or RFC3339
 	dateTime, err := time.Parse(time.DateOnly, dateStr)
 	if err != nil {
 		models.JSONError(h.Log, w, http.StatusBadRequest, "invalid date format")

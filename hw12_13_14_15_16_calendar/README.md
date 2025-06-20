@@ -35,3 +35,44 @@ GOOSE_DBSTRING?="postgres://calendar:calendar@localhost:5432/calendar"
 в качестве роутера выбрал gorilla mux
 для постгреса:  
 sqlx + pgx
+
+## Примеры запросов:
+
+### POST /events  
+URL: http://localhost:8080/events  
+Body:
+```json
+    {
+      "user_id":      "123",
+      "title":        "example",
+      "description":  "Обсудить детали проекта",
+      "starts_at":    "2025-06-20T20:00:00Z",
+      "ends_at":      "2025-06-20T21:00:00Z",
+      "notify_offset": 90000000000
+    }
+```
+
+
+### PATCH /events/{event_id}  
+URL: http://localhost:8080/events/{event_id}  
+Body:
+```json
+    {
+      "title":         "Новое название",
+      "description":   "Добавили пункты по бюджету",
+      "starts_at":     "2025-06-20T20:30:00Z",
+      "ends_at":       "2025-06-20T21:30:00Z",
+      "notify_offset": 90000000000
+    }
+```
+### DELETE /events/{event_id}  
+URL: http://localhost:8080/events/{event_id}
+
+### GET /events/day/{user_id}?date=YYYY-MM-DD  
+URL: http://localhost:8080/events/day/{user_id}?date=2025-06-20
+
+### GET /events/week/{user_id}?date=YYYY-MM-DD  
+URL: http://localhost:8080/events/week/{user_id}?date=2025-06-16
+
+### GET /events/month/{user_id}?date=YYYY-MM-DD  
+URL: http://localhost:8080/events/month/{user_id}?date=2025-06-01

@@ -7,29 +7,26 @@ import (
 	"io"
 	"log"
 	"log/slog"
-	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
 	"time"
 
-	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/api/grpcevents"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/database"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/app"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/config"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/handlers"
 	internalgrpc "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/grpc"
 	internalhttp "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/http"
-	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/interceptors"
 	mware "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/middleware"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage"
 	memorystorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/memory"
 	sqlstorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/sql"
-	_ "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/migrations"
+	"github.com/pressly/goose/v3"
+
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/pkg/logger"
 	"github.com/gorilla/mux"
-	goose "github.com/pressly/goose/v3"
-	"google.golang.org/grpc"
 )
 
 var configFile string
@@ -37,10 +34,6 @@ var configFile string
 func init() {
 	flag.StringVar(&configFile, "config", "/etc/calendar/config.toml", "Path to configuration file")
 }
-
-// TODO: Сделать единый сторэйдж интерфейс и апп интерфейс,
-//  а то он повторяется в нескольких местах, gRPC HTTP
-//  итд и при изменении будет сложно
 
 func main() {
 	flag.Parse()
@@ -50,6 +43,7 @@ func main() {
 		return
 	}
 	config := config.MustLoad(configFile)
+
 	// logger
 	filename := filepath.Join(config.Logger.LogFolder, time.Now().Format("2006-01-02_15-04-05")+".txt")
 	file, err := logger.OpenLogFile(filename)
@@ -92,7 +86,8 @@ func main() {
 	}()
 
 	// gRPC
-	StartGRPCServer(ctx, config, log, storr)
+	grpcServer := internalgrpc.New(calendar, config)
+	grpcServer.Start(ctx, config, log)
 
 	if err := server.Start(); err != nil {
 		log.Error("server error", slog.String("error", err.Error()))
@@ -101,7 +96,7 @@ func main() {
 	}
 }
 
-func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
+func NewStorage(ctx context.Context, config *config.Config) storage.EventStorage {
 	switch config.HTTP.DBType {
 	case "memory":
 		return memorystorage.New()
@@ -129,34 +124,35 @@ func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
 	// }
 }
 
-func StartGRPCServer(
-	ctx context.Context,
-	cfg *config.Config,
-	logger logger.Logger,
-	storage internalgrpc.EventStorage,
-) {
-	grpcSrv := grpc.NewServer(
-		grpc.UnaryInterceptor(interceptors.LogInterceptor(logger)),
-	)
+// // TODO: сделать вместо передачи storage -> app
+// func StartGRPCServer(
+// 	ctx context.Context,
+// 	cfg *config.Config,
+// 	logger logger.Logger,
+// 	storage storage.EventStorage,
+// ) {
+// 	grpcSrv := grpc.NewServer(
+// 		grpc.UnaryInterceptor(interceptors.LogInterceptor(logger)),
+// 	)
 
-	server := internalgrpc.New(storage, cfg)
+// 	server := internalgrpc.New(storage, cfg)
 
-	grpcevents.RegisterCalendarServiceServer(grpcSrv, server)
+// 	grpcevents.RegisterCalendarServiceServer(grpcSrv, server)
 
-	listener, err := net.Listen("tcp", ":"+cfg.GRPC.Port)
-	if err != nil {
-		log.Fatal(err)
-	}
-	logger.Info("GRPC starts", slog.String("port", cfg.GRPC.Port))
+// 	listener, err := net.Listen("tcp", ":"+cfg.GRPC.Port)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	logger.Info("GRPC starts", slog.String("port", cfg.GRPC.Port))
 
-	go func() {
-		if err := grpcSrv.Serve(listener); err != nil {
-			log.Fatal("GRPC server stoped", err)
-		}
-	}()
-	go func() {
-		<-ctx.Done()
-		slog.Info("GRPC graceful shutting down")
-		grpcSrv.GracefulStop()
-	}()
-}
+// 	go func() {
+// 		if err := grpcSrv.Serve(listener); err != nil {
+// 			log.Fatal("GRPC server stoped", err)
+// 		}
+// 	}()
+// 	go func() {
+// 		<-ctx.Done()
+// 		slog.Info("GRPC graceful shutting down")
+// 		grpcSrv.GracefulStop()
+// 	}()
+// }

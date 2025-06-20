@@ -57,6 +57,9 @@ func (s *Storage) DeleteEvent(ctx context.Context, eventID string) error {
 	default:
 		s.mu.Lock()
 		defer s.mu.Unlock()
+		if !s.CheckExistance(eventID) {
+			return models.ErrEventNotExists
+		}
 		delete(s.DB, eventID)
 		return nil
 	}

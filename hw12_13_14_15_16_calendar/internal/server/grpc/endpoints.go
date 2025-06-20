@@ -21,7 +21,7 @@ func (s *GRPCServer) CreateEvent(
 
 	ev := GRPCToEvent(requestEvent)
 
-	res, err := s.Store.CreateEvent(ctx, ev)
+	res, err := s.App.CreateEvent(ctx, ev)
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (s *GRPCServer) UpdateEvent(ctx context.Context, req *ge.UpdateEventRequest
 		return nil, models.ErrEventNotSet
 	}
 	event := GRPCToEvent(requestEvent)
-	res, err := s.Store.UpdateEvent(ctx, eventID, event)
+	res, err := s.App.UpdateEvent(ctx, eventID, event)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *GRPCServer) UpdateEvent(ctx context.Context, req *ge.UpdateEventRequest
 
 func (s *GRPCServer) DeleteEvent(ctx context.Context, req *ge.DeleteEventRequest) (*emptypb.Empty, error) {
 	eventID := req.GetEventId()
-	err := s.Store.DeleteEvent(ctx, eventID)
+	err := s.App.DeleteEvent(ctx, eventID)
 	return nil, err
 }
 
@@ -58,7 +58,7 @@ func (s *GRPCServer) ListDay(ctx context.Context, req *ge.ListDayRequest) (*ge.L
 
 	userID := req.GetUserId()
 
-	events, err := s.Store.ListEventsByDay(ctx, userID, req.GetDate().AsTime())
+	events, err := s.App.ListEventsByDay(ctx, userID, req.GetDate().AsTime())
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *GRPCServer) ListDay(ctx context.Context, req *ge.ListDayRequest) (*ge.L
 func (s *GRPCServer) ListWeek(ctx context.Context, req *ge.ListWeekRequest) (*ge.ListWeekResponse, error) {
 	userID := req.GetUserId()
 
-	events, err := s.Store.ListEventsByDay(ctx, userID, req.GetDate().AsTime())
+	events, err := s.App.ListEventsByWeek(ctx, userID, req.GetDate().AsTime())
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (s *GRPCServer) ListWeek(ctx context.Context, req *ge.ListWeekRequest) (*ge
 func (s *GRPCServer) ListMonth(ctx context.Context, req *ge.ListMonthRequest) (*ge.ListMonthResponse, error) {
 	userID := req.GetUserId()
 
-	events, err := s.Store.ListEventsByMonth(ctx, userID, req.GetDate().AsTime())
+	events, err := s.App.ListEventsByMonth(ctx, userID, req.GetDate().AsTime())
 	if err != nil {
 		return nil, err
 	}
@@ -93,13 +93,21 @@ func GRPCToEvent(event *ge.Event) *models.Event {
 	end := event.GetEndsAt().AsTime()
 	return &models.Event{
 		ID:           event.GetId(),
+		UserID:       event.GetUserId(),
 		Title:        event.GetTitle(),
+		Description:  event.GetDescription(),
 		StartsAt:     start,
 		EndsAt:       end,
-		Description:  event.GetDescription(),
-		UserID:       event.GetUserId(),
 		NotifyOffset: event.GetNotifyOffset().AsDuration(),
+		CreatedAt:    event.GetCreatedAt().AsTime(),
+		UpdatedAt:    event.GetUpdatedAt().AsTime(),
 	}
+	//  if t := pb.GetCreatedAt(); t != nil {
+	//     ev.CreatedAt = t.AsTime()
+	// }
+	// if t := pb.GetUpdatedAt(); t != nil {
+	//     ev.UpdatedAt = &t.AsTime()
+	// }
 }
 
 func eventToGRPC(event *models.Event) *ge.Event {
@@ -107,19 +115,20 @@ func eventToGRPC(event *models.Event) *ge.Event {
 		return nil
 	}
 	return &ge.Event{
-		Id:          event.ID,
-		Title:       event.Title,
-		StartsAt:    timestamppb.New(event.StartsAt),
-		EndsAt:      timestamppb.New(event.EndsAt),
-		Description: event.Description,
-		UserId:      event.UserID,
-		NotifyOffset: func() *durationpb.Duration {
-			if event.NotifyOffset > 0 {
-				return durationpb.New(event.NotifyOffset)
-			}
-			return nil
-		}(),
+		Id:           event.ID,
+		UserId:       event.UserID,
+		Title:        event.Title,
+		Description:  event.Description,
+		StartsAt:     timestamppb.New(event.StartsAt),
+		EndsAt:       timestamppb.New(event.EndsAt),
+		NotifyOffset: durationpb.New(event.NotifyOffset),
+		CreatedAt:    timestamppb.New(event.CreatedAt),
+		UpdatedAt:    timestamppb.New(event.UpdatedAt),
 	}
+	// на случай если буду делать указатель
+	// if ev.UpdatedAt != nil {
+	// 	pb.UpdatedAt = timestamppb.New(*ev.UpdatedAt)
+	// }
 }
 
 func manyEventsToGRPC(events []*models.Event) []*ge.Event {

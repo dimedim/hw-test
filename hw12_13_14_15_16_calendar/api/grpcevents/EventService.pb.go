@@ -33,6 +33,8 @@ type Event struct {
 	Description   string                 `protobuf:"bytes,5,opt,name=description,proto3" json:"description,omitempty"`
 	UserId        string                 `protobuf:"bytes,6,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
 	NotifyOffset  *durationpb.Duration   `protobuf:"bytes,7,opt,name=notify_offset,json=notifyOffset,proto3" json:"notify_offset,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -112,6 +114,20 @@ func (x *Event) GetUserId() string {
 func (x *Event) GetNotifyOffset() *durationpb.Duration {
 	if x != nil {
 		return x.NotifyOffset
+	}
+	return nil
+}
+
+func (x *Event) GetCreatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return nil
+}
+
+func (x *Event) GetUpdatedAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.UpdatedAt
 	}
 	return nil
 }
@@ -680,7 +696,7 @@ var File_EventService_proto protoreflect.FileDescriptor
 
 const file_EventService_proto_rawDesc = "" +
 	"\n" +
-	"\x12EventService.proto\x12\x05event\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x96\x02\n" +
+	"\x12EventService.proto\x12\x05event\x1a\x1fgoogle/protobuf/timestamp.proto\x1a\x1egoogle/protobuf/duration.proto\x1a\x1bgoogle/protobuf/empty.proto\"\x8c\x03\n" +
 	"\x05Event\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x127\n" +
@@ -688,7 +704,11 @@ const file_EventService_proto_rawDesc = "" +
 	"\aends_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x06endsAt\x12 \n" +
 	"\vdescription\x18\x05 \x01(\tR\vdescription\x12\x17\n" +
 	"\auser_id\x18\x06 \x01(\tR\x06userId\x12>\n" +
-	"\rnotify_offset\x18\a \x01(\v2\x19.google.protobuf.DurationR\fnotifyOffset\"8\n" +
+	"\rnotify_offset\x18\a \x01(\v2\x19.google.protobuf.DurationR\fnotifyOffset\x129\n" +
+	"\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"\n" +
+	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"8\n" +
 	"\x12CreateEventRequest\x12\"\n" +
 	"\x05event\x18\x01 \x01(\v2\f.event.EventR\x05event\"9\n" +
 	"\x13CreateEventResponse\x12\"\n" +
@@ -760,34 +780,36 @@ var file_EventService_proto_depIdxs = []int32{
 	13, // 0: event.Event.starts_at:type_name -> google.protobuf.Timestamp
 	13, // 1: event.Event.ends_at:type_name -> google.protobuf.Timestamp
 	14, // 2: event.Event.notify_offset:type_name -> google.protobuf.Duration
-	0,  // 3: event.CreateEventRequest.event:type_name -> event.Event
-	0,  // 4: event.CreateEventResponse.event:type_name -> event.Event
-	0,  // 5: event.UpdateEventRequest.event:type_name -> event.Event
-	0,  // 6: event.UpdateEventResponse.event:type_name -> event.Event
-	15, // 7: event.DeleteEventResponse.empty:type_name -> google.protobuf.Empty
-	13, // 8: event.ListDayRequest.date:type_name -> google.protobuf.Timestamp
-	0,  // 9: event.ListDayResponse.events:type_name -> event.Event
-	13, // 10: event.ListWeekRequest.date:type_name -> google.protobuf.Timestamp
-	0,  // 11: event.ListWeekResponse.events:type_name -> event.Event
-	13, // 12: event.ListMonthRequest.date:type_name -> google.protobuf.Timestamp
-	0,  // 13: event.ListMonthResponse.events:type_name -> event.Event
-	1,  // 14: event.CalendarService.CreateEvent:input_type -> event.CreateEventRequest
-	3,  // 15: event.CalendarService.UpdateEvent:input_type -> event.UpdateEventRequest
-	5,  // 16: event.CalendarService.DeleteEvent:input_type -> event.DeleteEventRequest
-	7,  // 17: event.CalendarService.ListDay:input_type -> event.ListDayRequest
-	9,  // 18: event.CalendarService.ListWeek:input_type -> event.ListWeekRequest
-	11, // 19: event.CalendarService.ListMonth:input_type -> event.ListMonthRequest
-	2,  // 20: event.CalendarService.CreateEvent:output_type -> event.CreateEventResponse
-	4,  // 21: event.CalendarService.UpdateEvent:output_type -> event.UpdateEventResponse
-	15, // 22: event.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
-	8,  // 23: event.CalendarService.ListDay:output_type -> event.ListDayResponse
-	10, // 24: event.CalendarService.ListWeek:output_type -> event.ListWeekResponse
-	12, // 25: event.CalendarService.ListMonth:output_type -> event.ListMonthResponse
-	20, // [20:26] is the sub-list for method output_type
-	14, // [14:20] is the sub-list for method input_type
-	14, // [14:14] is the sub-list for extension type_name
-	14, // [14:14] is the sub-list for extension extendee
-	0,  // [0:14] is the sub-list for field type_name
+	13, // 3: event.Event.created_at:type_name -> google.protobuf.Timestamp
+	13, // 4: event.Event.updated_at:type_name -> google.protobuf.Timestamp
+	0,  // 5: event.CreateEventRequest.event:type_name -> event.Event
+	0,  // 6: event.CreateEventResponse.event:type_name -> event.Event
+	0,  // 7: event.UpdateEventRequest.event:type_name -> event.Event
+	0,  // 8: event.UpdateEventResponse.event:type_name -> event.Event
+	15, // 9: event.DeleteEventResponse.empty:type_name -> google.protobuf.Empty
+	13, // 10: event.ListDayRequest.date:type_name -> google.protobuf.Timestamp
+	0,  // 11: event.ListDayResponse.events:type_name -> event.Event
+	13, // 12: event.ListWeekRequest.date:type_name -> google.protobuf.Timestamp
+	0,  // 13: event.ListWeekResponse.events:type_name -> event.Event
+	13, // 14: event.ListMonthRequest.date:type_name -> google.protobuf.Timestamp
+	0,  // 15: event.ListMonthResponse.events:type_name -> event.Event
+	1,  // 16: event.CalendarService.CreateEvent:input_type -> event.CreateEventRequest
+	3,  // 17: event.CalendarService.UpdateEvent:input_type -> event.UpdateEventRequest
+	5,  // 18: event.CalendarService.DeleteEvent:input_type -> event.DeleteEventRequest
+	7,  // 19: event.CalendarService.ListDay:input_type -> event.ListDayRequest
+	9,  // 20: event.CalendarService.ListWeek:input_type -> event.ListWeekRequest
+	11, // 21: event.CalendarService.ListMonth:input_type -> event.ListMonthRequest
+	2,  // 22: event.CalendarService.CreateEvent:output_type -> event.CreateEventResponse
+	4,  // 23: event.CalendarService.UpdateEvent:output_type -> event.UpdateEventResponse
+	15, // 24: event.CalendarService.DeleteEvent:output_type -> google.protobuf.Empty
+	8,  // 25: event.CalendarService.ListDay:output_type -> event.ListDayResponse
+	10, // 26: event.CalendarService.ListWeek:output_type -> event.ListWeekResponse
+	12, // 27: event.CalendarService.ListMonth:output_type -> event.ListMonthResponse
+	22, // [22:28] is the sub-list for method output_type
+	16, // [16:22] is the sub-list for method input_type
+	16, // [16:16] is the sub-list for extension type_name
+	16, // [16:16] is the sub-list for extension extendee
+	0,  // [0:16] is the sub-list for field type_name
 }
 
 func init() { file_EventService_proto_init() }

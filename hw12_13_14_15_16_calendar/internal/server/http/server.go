@@ -61,17 +61,6 @@ func (s *Server) GetRouter() http.Handler {
 }
 
 func (s *Server) RegisterRoutes() {
-	/*
-
-		    Создать (событие);
-		    Обновить (ID события, событие);
-		    Удалить (ID события);
-		    СписокСобытийНаДень (дата);
-		    СписокСобытийНаНеделю (дата начала недели);
-		    СписокСобытийНaМесяц (дата начала месяца).
-
-			/events POST
-	*/
 	s.Router.Use(mware.PanicRecover(s.Log))
 
 	s.Router.HandleFunc("/", s.Handlers.Hello).Methods(http.MethodGet)

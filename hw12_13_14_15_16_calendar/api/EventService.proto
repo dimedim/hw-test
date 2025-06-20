@@ -16,6 +16,8 @@ message Event {
   string description = 5;
   string user_id = 6;
   google.protobuf.Duration notify_offset = 7;
+  google.protobuf.Timestamp created_at     = 8;
+  google.protobuf.Timestamp updated_at     = 9;
 }
 
 message CreateEventRequest {
