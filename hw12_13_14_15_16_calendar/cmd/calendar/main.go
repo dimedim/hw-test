@@ -118,41 +118,7 @@ func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
 	if err != nil {
 		log.Fatal("migration error: %w", err)
 	}
-
 	// if err := goose.DownContext(ctx, db, migrationsPath); err != nil {
 	// 	log.Fatal("down migration: %w", err)
 	// }
 }
-
-// // TODO: сделать вместо передачи storage -> app
-// func StartGRPCServer(
-// 	ctx context.Context,
-// 	cfg *config.Config,
-// 	logger logger.Logger,
-// 	storage storage.EventStorage,
-// ) {
-// 	grpcSrv := grpc.NewServer(
-// 		grpc.UnaryInterceptor(interceptors.LogInterceptor(logger)),
-// 	)
-
-// 	server := internalgrpc.New(storage, cfg)
-
-// 	grpcevents.RegisterCalendarServiceServer(grpcSrv, server)
-
-// 	listener, err := net.Listen("tcp", ":"+cfg.GRPC.Port)
-// 	if err != nil {
-// 		log.Fatal(err)
-// 	}
-// 	logger.Info("GRPC starts", slog.String("port", cfg.GRPC.Port))
-
-// 	go func() {
-// 		if err := grpcSrv.Serve(listener); err != nil {
-// 			log.Fatal("GRPC server stoped", err)
-// 		}
-// 	}()
-// 	go func() {
-// 		<-ctx.Done()
-// 		slog.Info("GRPC graceful shutting down")
-// 		grpcSrv.GracefulStop()
-// 	}()
-// }

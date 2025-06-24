@@ -70,7 +70,6 @@ func (s *Server) RegisterRoutes() {
 	events.HandleFunc("/{event_id}", s.Handlers.UpdateEvent).Methods(http.MethodPatch, http.MethodPut)
 	events.HandleFunc("/{event_id}", s.Handlers.DeleteEvent).Methods(http.MethodDelete)
 
-	// TODO: надо как-то по другому, дейт не гибко вроде как
 	//? GET /events/day/user_id?date=2025-06-10
 	events.HandleFunc("/day/{user_id}", s.Handlers.ListEventsByDay).Methods(http.MethodGet)
 	events.HandleFunc("/week/{user_id}", s.Handlers.ListEventsByWeek).Methods(http.MethodGet)

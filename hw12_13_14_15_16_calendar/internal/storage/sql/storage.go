@@ -59,8 +59,6 @@ func (s *Storage) UpdateEvent(
 	eventID string,
 	e *models.Event,
 ) (*models.Event, error) {
-	// upd := time.Now()
-	// e.UpdatedAt = &upd
 	e.UpdatedAt = time.Now()
 	e.ID = eventID
 

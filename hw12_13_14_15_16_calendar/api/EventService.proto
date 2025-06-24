@@ -40,31 +40,12 @@ message DeleteEventRequest {
   string event_id = 1;
 }
 
-message DeleteEventResponse {
-  google.protobuf.Empty empty = 1;
-}
-
-message ListDayRequest {
+message ListEventsRequest {
   google.protobuf.Timestamp date = 1;
   string user_id = 2;
 }
-message ListDayResponse {
-  repeated Event events = 1;
-}
 
-message ListWeekRequest {
-  google.protobuf.Timestamp date = 1;
-  string user_id = 2;
-}
-message ListWeekResponse {
-  repeated Event events = 1;
-}
-
-message ListMonthRequest {
-  google.protobuf.Timestamp date = 1;
-  string user_id = 2;
-}
-message ListMonthResponse {
+message ListEventsResponse {
   repeated Event events = 1;
 }
 
@@ -72,7 +53,7 @@ service CalendarService {
   rpc CreateEvent(CreateEventRequest) returns (CreateEventResponse);
   rpc UpdateEvent(UpdateEventRequest) returns (UpdateEventResponse);
   rpc DeleteEvent(DeleteEventRequest) returns (google.protobuf.Empty);
-  rpc ListDay(ListDayRequest) returns (ListDayResponse);
-  rpc ListWeek(ListWeekRequest) returns (ListWeekResponse);
-  rpc ListMonth (ListMonthRequest) returns (ListMonthResponse);
+  rpc ListDay(ListEventsRequest) returns (ListEventsResponse);
+  rpc ListWeek(ListEventsRequest) returns (ListEventsResponse);
+  rpc ListMonth (ListEventsRequest) returns (ListEventsResponse);
 }
