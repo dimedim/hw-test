@@ -2,7 +2,6 @@ package internalgrpc
 
 import (
 	"context"
-	"time"
 
 	ge "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/api/grpcevents"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/models"
@@ -28,7 +27,6 @@ func (s *GRPCServer) CreateEvent(ctx context.Context, req *ge.CreateEventRequest
 }
 
 func (s *GRPCServer) UpdateEvent(ctx context.Context, req *ge.UpdateEventRequest) (*ge.UpdateEventResponse, error) {
-
 	requestEvent := req.GetEvent()
 	eventID := req.GetEventId()
 	if requestEvent == nil || eventID == "" {
@@ -51,7 +49,6 @@ func (s *GRPCServer) DeleteEvent(ctx context.Context, req *ge.DeleteEventRequest
 }
 
 func (s *GRPCServer) ListDay(ctx context.Context, req *ge.ListEventsRequest) (*ge.ListEventsResponse, error) {
-
 	userID := req.GetUserId()
 
 	events, err := s.App.ListEventsByDay(ctx, userID, req.GetDate().AsTime())
@@ -78,36 +75,5 @@ func (s *GRPCServer) ListMonth(ctx context.Context, req *ge.ListEventsRequest) (
 	if err != nil {
 		return nil, err
 	}
-	time.Unix()
 	return &ge.ListEventsResponse{Events: manyEventsToGRPC(events)}, nil
 }
-
-// TODO: мб лучше через time.Unix()
-/*
-func (serv *server) GetListByPeriod(_ context.Context, req *eventproto.EventGetListByPeriodRequest) (*eventproto.EventGetListByPeriodResponse, error) {
-	events, err := serv.Calendar.GetEventsByPeriod(
-		time.Unix(req.DateFrom.GetSeconds(), int64(req.DateFrom.GetNanos())),
-		time.Unix(req.DateTo.GetSeconds(), int64(req.DateTo.GetNanos())),
-	)
-	if err != nil {
-		return nil, status.Error(codes.Internal, err.Error())
-	}
-
-	respEvents := make([]*eventproto.Event, 0, len(events))
-	for _, event := range events {
-		respEvents = append(respEvents, convertToProtoEvent(event))
-	}
-
-	return &eventproto.EventGetListByPeriodResponse{Events: respEvents}, nil
-}
-
-func convertToProtoEvent(event *domain.Event) *eventproto.Event {
-	return &eventproto.Event{
-		Id:       event.ID.String(),
-		Title:    event.Title,
-		DateFrom: &timestamp.Timestamp{Seconds: event.DateFrom.Unix(), Nanos: int32(event.DateFrom.UnixNano())},
-		DateTo:   &timestamp.Timestamp{Seconds: event.DateTo.Unix(), Nanos: int32(event.DateTo.UnixNano())},
-	}
-}
-
-*/

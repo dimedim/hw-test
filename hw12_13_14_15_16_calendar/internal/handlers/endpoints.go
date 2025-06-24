@@ -21,8 +21,6 @@ func (h *Handlers) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: add validate not nil title and endsAt !before startsAt
-
 	res, err := h.App.CreateEvent(r.Context(), &event)
 	if err != nil {
 		models.JSONError(h.Log, w, http.StatusInternalServerError, "internal")

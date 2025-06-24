@@ -15,18 +15,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// type EventStorage interface {
-// 	CreateEvent(ctx context.Context, e *models.Event) (*models.Event, error)
-// 	UpdateEvent(ctx context.Context, eventID string, e *models.Event) (*models.Event, error)
-// 	DeleteEvent(ctx context.Context, eventID string) error
-
-// 	ListEventsByDay(ctx context.Context, userID string, day time.Time) ([]*models.Event, error)
-// 	ListEventsByWeek(ctx context.Context, userID string, week time.Time) ([]*models.Event, error)
-// 	ListEventsByMonth(ctx context.Context, userID string, month time.Time) ([]*models.Event, error)
-
-// 	Close() error
-// }
-
 type EventApp interface {
 	CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error)
 	UpdateEvent(ctx context.Context, eventID string, e *models.Event) (*models.Event, error)
@@ -37,11 +25,6 @@ type EventApp interface {
 	ListEventsByMonth(ctx context.Context, userID string, month time.Time) ([]*models.Event, error)
 }
 
-//	type GRPCServer struct {
-//		Cfg *config.Config
-//		ge.UnimplementedCalendarServiceServer
-//		Store storage.EventStorage
-//	}
 type GRPCServer struct {
 	Cfg *config.Config
 	ge.UnimplementedCalendarServiceServer
@@ -53,7 +36,6 @@ func New(app EventApp, cfg *config.Config) *GRPCServer {
 }
 
 func (s *GRPCServer) Start(ctx context.Context, cfg *config.Config, logger logger.Logger) {
-
 	grpcSrv := grpc.NewServer(
 		grpc.UnaryInterceptor(interceptors.LogInterceptor(logger)),
 	)

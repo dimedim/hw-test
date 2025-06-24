@@ -45,7 +45,7 @@ Body:
     {
       "user_id":      "123",
       "title":        "example",
-      "description":  "Обсудить детали проекта",
+      "description":  "example",
       "starts_at":    "2025-06-20T20:00:00Z",
       "ends_at":      "2025-06-20T21:00:00Z",
       "notify_offset": 90000000000
@@ -58,8 +58,8 @@ URL: http://localhost:8080/events/{event_id}
 Body:
 ```json
     {
-      "title":         "Новое название",
-      "description":   "Добавили пункты по бюджету",
+      "title":         "example_upd",
+      "description":   "example_upd",
       "starts_at":     "2025-06-20T20:30:00Z",
       "ends_at":       "2025-06-20T21:30:00Z",
       "notify_offset": 90000000000

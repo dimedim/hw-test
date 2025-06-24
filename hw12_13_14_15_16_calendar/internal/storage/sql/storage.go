@@ -29,7 +29,6 @@ func (s *Storage) CreateEvent(
 	ctx context.Context,
 	e *models.Event,
 ) (*models.Event, error) {
-	// TODO: добавил updated_at
 	const query = `INSERT INTO events(id, user_id, title, description, 
 	starts_at, ends_at, notify_offset, updated_at)
 	VALUES (:id, :user_id, :title, :description, 
@@ -37,7 +36,6 @@ func (s *Storage) CreateEvent(
 	RETURNING created_at;`
 
 	rows, err := s.DB.NamedQueryContext(ctx, query, e)
-
 	if err != nil {
 		return nil, fmt.Errorf("new event insert: %w", err)
 	}
@@ -54,15 +52,9 @@ func (s *Storage) CreateEvent(
 	return e, nil
 }
 
-func (s *Storage) UpdateEvent(
-	ctx context.Context,
-	eventID string,
-	e *models.Event,
-) (*models.Event, error) {
+func (s *Storage) UpdateEvent(ctx context.Context, eventID string, e *models.Event) (*models.Event, error) {
 	e.UpdatedAt = time.Now()
 	e.ID = eventID
-
-	// TODO: сейчас возвращает нулевой created_at нужно получать актуальные данные
 	const query = `UPDATE events SET
 		title = :title,
 		description   = :description,
@@ -70,20 +62,33 @@ func (s *Storage) UpdateEvent(
 		ends_at       = :ends_at,
 		notify_offset = :notify_offset,
 		updated_at    = :updated_at
-	WHERE id = :id;
+	WHERE id = :id
+	RETURNING
+        id,
+        user_id,
+        title,
+        description,
+        starts_at,
+        ends_at,
+        notify_offset,
+        created_at,
+        updated_at;
 	`
 
-	res, err := s.DB.NamedExecContext(ctx, query, e)
+	rows, err := s.DB.NamedQueryContext(ctx, query, e)
 	if err != nil {
 		return nil, fmt.Errorf("update event exec: %w", err)
 	}
-	count, err := res.RowsAffected()
-	if err != nil {
-		return nil, fmt.Errorf("update event RowsAffected: %w", err)
-	}
-	if count == 0 {
+	defer rows.Close()
+
+	if !rows.Next() {
 		return nil, models.ErrEventNotExists
 	}
+
+	if err := rows.StructScan(e); err != nil {
+		return nil, fmt.Errorf("update event scan: %w", err)
+	}
+
 	return e, nil
 }
 

@@ -23,10 +23,9 @@ import (
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage"
 	memorystorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/memory"
 	sqlstorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/sql"
-	"github.com/pressly/goose/v3"
-
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/pkg/logger"
 	"github.com/gorilla/mux"
+	"github.com/pressly/goose/v3"
 )
 
 var configFile string

@@ -24,12 +24,6 @@ func GRPCToEvent(event *ge.Event) *models.Event {
 		CreatedAt:    event.GetCreatedAt().AsTime(),
 		UpdatedAt:    event.GetUpdatedAt().AsTime(),
 	}
-	//  if t := pb.GetCreatedAt(); t != nil {
-	//     ev.CreatedAt = t.AsTime()
-	// }
-	// if t := pb.GetUpdatedAt(); t != nil {
-	//     ev.UpdatedAt = &t.AsTime()
-	// }
 }
 
 func eventToGRPC(event *models.Event) *ge.Event {
@@ -47,10 +41,6 @@ func eventToGRPC(event *models.Event) *ge.Event {
 		CreatedAt:    timestamppb.New(event.CreatedAt),
 		UpdatedAt:    timestamppb.New(event.UpdatedAt),
 	}
-	// на случай если буду делать указатель
-	// if ev.UpdatedAt != nil {
-	// 	pb.UpdatedAt = timestamppb.New(*ev.UpdatedAt)
-	// }
 }
 
 func manyEventsToGRPC(events []*models.Event) []*ge.Event {

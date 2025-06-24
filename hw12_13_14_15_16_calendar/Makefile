@@ -22,11 +22,7 @@ install-lint-deps:
 	@curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh \
 	| sh -s -- -b $(shell go env GOPATH)/bin v2.1.6
 
-# TODO:
-# lint: install-lint-deps
-# 	golangci-lint run ./...
-
-lint:
+lint: install-lint-deps
 	golangci-lint run ./...
 
 build:
@@ -70,7 +66,7 @@ up:
 	docker compose up -d
 	sleep 5
 	@$(MAKE) run
-#-----------------------------------------------------------------------
+#grpc-----------------------------------------------------------------------
 PROTO_DIR= api
 OUT_DIR= api/grpcevents
 PROTO_FILE= $(PROTO_DIR)/EventService.proto
