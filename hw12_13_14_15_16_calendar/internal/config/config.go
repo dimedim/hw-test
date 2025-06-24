@@ -10,11 +10,12 @@ import (
 
 type Config struct {
 	Logger LoggerConf `yaml:"logger"`
-	App    App        `yaml:"app"`
+	HTTP   HTTPServer `yaml:"http_server"`
 	DB     PostgresDB `yaml:"database"`
+	GRPC   GRPCServer `yaml:"grpc_server"`
 }
 
-type App struct {
+type HTTPServer struct {
 	Port        string        `yaml:"port" env:"APP_PORT" env-default:"8080"`
 	Host        string        `yaml:"host" env:"APP_HOST" env-default:"localhost"`
 	DBType      string        `yaml:"db_type" env:"DB_TYPE"`
@@ -35,10 +36,14 @@ type PostgresDB struct {
 	MigrationFilepath string `yaml:"migrations_folder"`
 }
 
+type GRPCServer struct {
+	Port string `yaml:"port"`
+}
+
 // Приоритеты:
 // 1) env и .env файл соответственно;
-// 2)Ямл файл
-// 3)дефолт если не задано ничего. Если переменная пустая то останется пустой!
+// 2) Ямл файл
+// 3) Дефолт если не задано ничего. Если переменная пустая то останется пустой!
 func MustLoad(filepath string) *Config {
 	if err := godotenv.Load(); err != nil {
 		panic("godotenv")

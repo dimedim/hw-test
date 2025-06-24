@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"flag"
-	"fmt"
 	"io"
 	"log"
 	"log/slog"
@@ -18,15 +17,15 @@ import (
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/app"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/config"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/handlers"
-	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/models"
+	internalgrpc "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/grpc"
 	internalhttp "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/http"
 	mware "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/server/middleware"
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage"
 	memorystorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/memory"
 	sqlstorage "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/storage/sql"
-	_ "github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/migrations"
 	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/pkg/logger"
 	"github.com/gorilla/mux"
-	goose "github.com/pressly/goose/v3"
+	"github.com/pressly/goose/v3"
 )
 
 var configFile string
@@ -43,6 +42,7 @@ func main() {
 		return
 	}
 	config := config.MustLoad(configFile)
+
 	// logger
 	filename := filepath.Join(config.Logger.LogFolder, time.Now().Format("2006-01-02_15-04-05")+".txt")
 	file, err := logger.OpenLogFile(filename)
@@ -84,6 +84,10 @@ func main() {
 		}
 	}()
 
+	// gRPC
+	grpcServer := internalgrpc.New(calendar, config)
+	grpcServer.Start(ctx, config, log)
+
 	if err := server.Start(); err != nil {
 		log.Error("server error", slog.String("error", err.Error()))
 		cancel()
@@ -91,8 +95,8 @@ func main() {
 	}
 }
 
-func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
-	switch config.App.DBType {
+func NewStorage(ctx context.Context, config *config.Config) storage.EventStorage {
+	switch config.HTTP.DBType {
 	case "memory":
 		return memorystorage.New()
 	case "postgres":
@@ -104,22 +108,8 @@ func NewStorage(ctx context.Context, config *config.Config) app.EventStorage {
 		migrate(ctx, pgxConn.DB, config.DB.MigrationFilepath)
 		return psqlStorage
 	}
-	slog.Warn("storage type not set", slog.String("type", config.App.DBType))
+	slog.Warn("storage type not set", slog.String("type", config.HTTP.DBType))
 	return memorystorage.New()
-}
-
-func DummyCheck(logg logger.Logger) {
-	logg.Info("dummy check")
-
-	stor := memorystorage.New()
-
-	for {
-		testEvent := &models.Event{ID: "123", CreatedAt: time.Now().UTC()}
-		stor.CreateEvent(context.Background(), testEvent)
-
-		fmt.Println(stor.DB["123"])
-		time.Sleep(time.Second * 10)
-	}
 }
 
 func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
@@ -127,7 +117,6 @@ func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
 	if err != nil {
 		log.Fatal("migration error: %w", err)
 	}
-
 	// if err := goose.DownContext(ctx, db, migrationsPath); err != nil {
 	// 	log.Fatal("down migration: %w", err)
 	// }

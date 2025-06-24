@@ -28,17 +28,29 @@ func LoggingMiddleware(logger logger.Logger) mux.MiddlewareFunc {
 			if userAgent == "" {
 				userAgent = "-"
 			}
-
-			logger.Info(
-				"msg",
-				slog.String("ip", ip),
-				slog.String("method,", r.Method),
-				slog.String("uri", r.RequestURI),
-				slog.String("protocol", r.Proto),
-				slog.String("duration", time.Since(start).String()),
-				slog.Int("status_code", statusRec.status),
-				slog.String("user_agent,", userAgent),
-			)
+			if statusRec.status >= 500 {
+				logger.Error(
+					"msg",
+					slog.String("ip", ip),
+					slog.String("method", r.Method),
+					slog.String("uri", r.RequestURI),
+					slog.String("protocol", r.Proto),
+					slog.String("duration", time.Since(start).String()),
+					slog.Int("status_code", statusRec.status),
+					slog.String("user_agent", userAgent),
+				)
+			} else {
+				logger.Info(
+					"msg",
+					slog.String("ip", ip),
+					slog.String("method", r.Method),
+					slog.String("uri", r.RequestURI),
+					slog.String("protocol", r.Proto),
+					slog.String("duration", time.Since(start).String()),
+					slog.Int("status_code", statusRec.status),
+					slog.String("user_agent", userAgent),
+				)
+			}
 		})
 	}
 }

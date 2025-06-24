@@ -2,7 +2,7 @@ logger:
   level: info
   log_folder: "./logs"
 
-app:
+http_server:
   port: 8080
   host: localhost
   db_type: memory
@@ -17,3 +17,6 @@ database:
   port: "5432"
   migrations_folder: "./migrations"
   
+grpc_server:
+  port: 50051
+  host: localhost

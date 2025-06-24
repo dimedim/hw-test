@@ -58,7 +58,7 @@ func TestBasic(t *testing.T) {
 	storage := New()
 	ctx := context.Background()
 
-	err := storage.CreateEvent(ctx, events[0])
+	_, err := storage.CreateEvent(ctx, events[0])
 	require.NoError(t, err)
 
 	res, err := storage.ListEventsByDay(ctx, UserID, TimeNow.UTC())
@@ -77,7 +77,7 @@ func TestBasic(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, v := range events {
-		err = storage.CreateEvent(ctx, v)
+		_, err = storage.CreateEvent(ctx, v)
 		require.NoError(t, err)
 	}
 
@@ -99,10 +99,10 @@ func TestErrorCases(t *testing.T) {
 
 	stor := New()
 
-	err := stor.CreateEvent(ctx, events[0])
+	_, err := stor.CreateEvent(ctx, events[0])
 	require.Error(t, err)
 
-	err = stor.UpdateEvent(ctx, "1", events[0])
+	_, err = stor.UpdateEvent(ctx, "1", events[0])
 	require.Error(t, err)
 
 	err = stor.DeleteEvent(ctx, "1")
@@ -143,7 +143,8 @@ func TestGetEventListByAnyDate_FilterAndSort(t *testing.T) {
 	storage := New()
 	ctx := context.Background()
 	for _, ev := range []*models.Event{e1, e2, e3, e4, e5} {
-		require.NoError(t, storage.CreateEvent(ctx, ev))
+		_, err := storage.CreateEvent(ctx, ev)
+		require.NoError(t, err)
 	}
 
 	res, err := storage.GetEventListByAnyDate("u1", start, end)
@@ -158,7 +159,7 @@ func TestUpdateEvent_NotExists(t *testing.T) {
 	ctx, canc := context.WithTimeout(context.Background(), time.Second*4)
 	defer canc()
 	storage := New()
-	err := storage.UpdateEvent(ctx, "invalid", &models.Event{})
+	_, err := storage.UpdateEvent(ctx, "invalid", &models.Event{})
 	require.Equal(t, models.ErrEventNotExists, err)
 }
 
@@ -166,7 +167,7 @@ func TestUpdateEvent_CancelledContext(t *testing.T) {
 	storage := New()
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	err := storage.UpdateEvent(ctx, "any", &models.Event{})
+	_, err := storage.UpdateEvent(ctx, "any", &models.Event{})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "update event:")
 }
@@ -176,11 +177,11 @@ func TestUpdateEvent_Success(t *testing.T) {
 	ctx := context.Background()
 
 	e := &models.Event{ID: "e1", UserID: "u1", StartsAt: time.Now().UTC()}
-	err := storage.CreateEvent(ctx, e)
+	_, err := storage.CreateEvent(ctx, e)
 	require.NoError(t, err)
 
 	updated := &models.Event{ID: "e1", UserID: "u1", Title: "updated title", StartsAt: e.StartsAt}
-	err = storage.UpdateEvent(ctx, "e1", updated)
+	_, err = storage.UpdateEvent(ctx, "e1", updated)
 	require.NoError(t, err)
 
 	got := storage.DB["e1"]
@@ -201,7 +202,7 @@ func TestConcurrency1(t *testing.T) {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			err := stor.CreateEvent(ctx, &models.Event{ID: strconv.Itoa(i), UserID: UserID, StartsAt: TimeNow})
+			_, err := stor.CreateEvent(ctx, &models.Event{ID: strconv.Itoa(i), UserID: UserID, StartsAt: TimeNow})
 			require.NoError(t, err)
 		}()
 	}
@@ -228,9 +229,11 @@ func TestConcurrency2(t *testing.T) {
 				UserID:   "user_id",
 				StartsAt: time.Date(2025, 5, 28, 0, 0, i, 0, time.UTC),
 			}
-			require.NoError(t, storage.CreateEvent(ctx, e))
+			_, err := storage.CreateEvent(ctx, e)
+			require.NoError(t, err)
 			e.Title = "updated"
-			require.NoError(t, storage.UpdateEvent(ctx, id, e))
+			_, err = storage.UpdateEvent(ctx, id, e)
+			require.NoError(t, err)
 		}(i)
 	}
 	wg.Wait()

@@ -13,6 +13,12 @@ import (
 
 type Handlers interface {
 	Hello(w http.ResponseWriter, r *http.Request)
+	CreateEvent(w http.ResponseWriter, r *http.Request)
+	UpdateEvent(w http.ResponseWriter, r *http.Request)
+	DeleteEvent(w http.ResponseWriter, r *http.Request)
+	ListEventsByDay(w http.ResponseWriter, r *http.Request)
+	ListEventsByWeek(w http.ResponseWriter, r *http.Request)
+	ListEventsByMonth(w http.ResponseWriter, r *http.Request)
 }
 
 type Server struct {
@@ -24,16 +30,16 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config, log logger.Logger, router *mux.Router, handlers Handlers) *Server {
-	addr := fmt.Sprintf("%s:%s", cfg.App.Host, cfg.App.Port)
+	addr := fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port)
 	return &Server{
 		Cfg: cfg,
 		Log: log,
 		HTTPServer: &http.Server{
 			Addr:         addr,
 			Handler:      router,
-			ReadTimeout:  cfg.App.Timeout,
-			WriteTimeout: cfg.App.Timeout,
-			IdleTimeout:  cfg.App.IdleTimeout,
+			ReadTimeout:  cfg.HTTP.Timeout,
+			WriteTimeout: cfg.HTTP.Timeout,
+			IdleTimeout:  cfg.HTTP.IdleTimeout,
 		},
 		Router:   router,
 		Handlers: handlers,
@@ -58,4 +64,14 @@ func (s *Server) RegisterRoutes() {
 	s.Router.Use(mware.PanicRecover(s.Log))
 
 	s.Router.HandleFunc("/", s.Handlers.Hello).Methods(http.MethodGet)
+
+	events := s.Router.PathPrefix("/events").Subrouter()
+	events.HandleFunc("", s.Handlers.CreateEvent).Methods(http.MethodPost)
+	events.HandleFunc("/{event_id}", s.Handlers.UpdateEvent).Methods(http.MethodPatch, http.MethodPut)
+	events.HandleFunc("/{event_id}", s.Handlers.DeleteEvent).Methods(http.MethodDelete)
+
+	// ? GET /events/day/user_id?date=2025-06-10
+	events.HandleFunc("/day/{user_id}", s.Handlers.ListEventsByDay).Methods(http.MethodGet)
+	events.HandleFunc("/week/{user_id}", s.Handlers.ListEventsByWeek).Methods(http.MethodGet)
+	events.HandleFunc("/month/{user_id}", s.Handlers.ListEventsByMonth).Methods(http.MethodGet)
 }
