@@ -1,4 +1,6 @@
 BIN := "./bin/calendar"
+SHEDULER_BIN := "./bin/calendar_scheduler"
+SENDER_BIN := "./bin/calendar_sender"
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
@@ -25,11 +27,11 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-build:
+build: build-scheduler build-sender
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 
 run: build
-	$(BIN) -config ./configs/config.yaml
+	$(BIN) --config ./configs/config.yaml
 
 test:
 	go test -race -v ./internal/...
@@ -79,3 +81,29 @@ generate:
 	--go_out=$(OUT_DIR) --go_opt=paths=source_relative \
 	--go-grpc_out=$(OUT_DIR) --go-grpc_opt=paths=source_relative \
 	$(PROTO_FILE)
+
+#rabbitMQ-----------------------------------------------------------------------
+build-scheduler:
+	go build -o $(SHEDULER_BIN) ./cmd/scheduler
+
+build-sender:
+	go build -o $(SENDER_BIN) ./cmd/sender
+
+# API (calendar);
+# Планировщик (calendar_scheduler);
+# Рассыльщик (calendar_sender).
+
+# ./calendar           --config=/path/to/calendar_config.yaml
+# ./calendar_scheduler --config=/path/to/scheduler_config.yaml
+# ./calendar_sender    --config=/path/to/sender_config.yaml
+
+
+simple: build-scheduler build-sender
+	$(SENDER_BIN)
+	$(SHEDULER_BIN)
+
+sender: build-sender
+	$(SENDER_BIN)
+
+scheduler: build-scheduler
+	$(SHEDULER_BIN)
