@@ -1,55 +1,113 @@
 package rabbitmq
 
-import amqp "github.com/rabbitmq/amqp091-go"
+import (
+	"context"
+	"fmt"
 
-// TODO: сейчас это просто заглушка
-/*
-yaml
-rabbitmq:
-  url: "amqp://guest:guest@localhost:5672/"
-  exchange: "events"
-  queue: "notifications"
-  routing_key: "notify"
-scheduler:
-  interval_seconds: 60   # как часто сканировать
-  delete_older_than_days: 365
-*/
-type Client struct {
-	conn    *amqp.Connection
-	channel *amqp.Channel
+	amqp "github.com/rabbitmq/amqp091-go"
+)
+
+type Client interface {
+	Setup(ctx context.Context, exch, exchType, queue, key string) error
+	Publish(ctx context.Context, exch, key string, body []byte) error
+	Consume(ctx context.Context, queue string) (<-chan amqp.Delivery, error)
+	Close() error
 }
 
-func NewClient(url string) (*Client, error) {
+type RabbitClient struct {
+	conn *amqp.Connection
+	ch   *amqp.Channel
+}
+
+func New(url string) (Client, error) {
 	conn, err := amqp.Dial(url)
 	if err != nil {
 		return nil, err
 	}
+
 	ch, err := conn.Channel()
 	if err != nil {
 		conn.Close()
 		return nil, err
 	}
-	return &Client{conn: conn, channel: ch}, nil
+
+	return &RabbitClient{conn: conn, ch: ch}, nil
 }
 
-func (c *Client) Setup(exchange, queue, routingKey string) error {
-	// объявление exchange и queue, связывание
-	// channel.ExchangeDeclare(...)
-	// channel.QueueDeclare(...)
-	// channel.QueueBind(...)
+func (c *RabbitClient) Setup(ctx context.Context, exch, exchType, queue, key string) error {
+	if err := c.ch.ExchangeDeclare(
+		exch,     // имя
+		exchType, // тип ("direct", "fanout", "topic")
+		true,     // durable «Сохраняй эту очередь на диске, чтобы при перезапуске RabbitMQ она осталась».
+		false,    // autoDelete Не удалять очередь автоматически, когда из неё перестанут потреблять
+		false,    // internal Разрешаю публиковать в этот exchange из клиентов».
+		// Если выставить true, можно использовать exchange только для промежуточного маршрута,
+		//  но не для внешних публикаций.
+		false, // noWait
+		nil,   // args
+	); err != nil {
+		return fmt.Errorf("exchange declare: %w", err)
+	}
+
+	q, err := c.ch.QueueDeclare(
+		queue, // name
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive Эта очередь может использоваться разными соединениями и клиентами
+		false, // no-wait Жду от сервера подтверждения, что очередь объявлена
+		// Если true — клиент просто шлёт команду и не дожидается ответа (асинхронно).
+		nil, // arguments
+	)
+	if err != nil {
+		return fmt.Errorf("queue declare: %w", err)
+	}
+
+	if err := c.ch.QueueBind(
+		q.Name,
+		key,  // routing key
+		exch, // exchange
+		false,
+		nil,
+	); err != nil {
+		return fmt.Errorf("queue bind: %w", err)
+	}
 	return nil
 }
 
-func (c *Client) Publish(exchange, routingKey string, body []byte) error {
-	return c.channel.Publish(exchange, routingKey, false, false,
-		amqp.Publishing{ContentType: "application/json", Body: body})
+func (c *RabbitClient) Publish(ctx context.Context, exch, key string, body []byte) error {
+	return c.ch.PublishWithContext(
+		ctx,
+		exch,
+		key,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "application/json",
+			Body:        body,
+		},
+	)
 }
 
-func (c *Client) Consume(queue string) (<-chan amqp.Delivery, error) {
-	return c.channel.Consume(queue, "", true, false, false, false, nil)
+func (c *RabbitClient) Consume(ctx context.Context, queue string) (<-chan amqp.Delivery, error) {
+	return c.ch.ConsumeWithContext(
+		ctx,
+		queue,
+		"", // consumerTag — это просто строковое имя для «потребителя» (твоего процесса).
+		// Если оставить его пустым (""), RabbitMQ сам сгенерирует уникальный тег.
+		true,  // autoAck // TODO: надо бы сделать подтверждение после обработки, а не автоматом
+		false, // exclusive
+		false, // noLocal
+		false, // noWait
+		nil,   // args
+
+	)
 }
 
-func (c *Client) Close() {
-	c.channel.Close()
-	c.conn.Close()
+func (c *RabbitClient) Close() error {
+	err := c.ch.Close()
+	if err != nil {
+		c.conn.Close()
+		return err
+	}
+	return c.conn.Close()
 }

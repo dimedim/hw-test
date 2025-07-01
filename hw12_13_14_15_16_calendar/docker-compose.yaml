@@ -24,6 +24,20 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
+  # scheduler:
+  #   build: .
+  #   command: ["./bin/calendar_scheduler","--config=/etc/calendar/rabbit.yaml"]
+  #   depends_on: ["postgres-db","rabbitmq"]
+  #   volumes:
+  #     - ./configs/rabbit.yaml:/etc/calendar/rabbit.yaml
+
+  # sender:
+  #   build: .
+  #   command: ["./bin/calendar_sender","--config=/etc/calendar/rabbit.yaml"]
+  #   depends_on: ["rabbitmq"]
+  #   volumes:
+  #     - ./configs/rabbit.yaml:/etc/calendar/rabbit.yaml
+
 volumes:
   db_data:
   rabbitmq_data:

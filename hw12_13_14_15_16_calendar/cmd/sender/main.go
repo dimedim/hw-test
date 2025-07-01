@@ -8,62 +8,22 @@ package main
 // 	fmt.Println("sender consumer")
 // }
 
-import (
-	"context"
-	"log"
-	"time"
-
-	amqp "github.com/rabbitmq/amqp091-go"
-)
-
 func main() {
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer conn.Close()
+	HelloExample()
 
-	ch, err := conn.Channel()
+	//TODO:
+	/*
+			Задачи рассыльщика:
 
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ch.Close()
+		Прочитать тот же rabbitmq-блок конфига (только url и queue).
 
-	queue, err := ch.QueueDeclare(
-		"hello", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
-	)
-	if err != nil {
-		log.Fatalf("failed to declare a queue. Error: %s", err)
-	}
+		Подключиться к RabbitMQ и убедиться, что очередь существует.
 
-	messages, err := ch.Consume(
-		queue.Name, // queue
-		"",         // consumer
-		true,       // auto-ack
-		false,      // exclusive
-		false,      // no-local
-		false,      // no-wait
-		nil,        // args
-	)
-	if err != nil {
-		log.Fatalf("failed to register a consumer. Error: %s", err)
-	}
+		Вызвать Consume(queue) и в цикле читать Delivery.
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*15)
-	defer cancel()
+		Для каждого сообщения распарсить в Notification и просто вывести в STDOUT или лог:
 
-	go func() {
-		for message := range messages {
-			log.Printf("GET MESSAGE!!!!!: %s\n", message.Body)
-		}
-	}()
+		При SIGINT/TERM корректно закрыть соединение.
+	*/
 
-	log.Println("wait msges")
-	<-ctx.Done()
 }

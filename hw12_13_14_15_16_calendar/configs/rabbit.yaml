@@ -1,0 +1,13 @@
+db:
+  dsn: "postgres://user:pass@postgres-db:5432/calendar?sslmode=disable"
+
+rabbitmq:
+  url:          "amqp://guest:guest@rabbitmq:5672/"
+  exchange:     "calendar_events"
+  exchangeType: "direct"
+  queue:        "calendar_notifications"
+  routingKey:   "notify"
+
+scheduler:
+  intervalSeconds: 60
+  deleteOlderThanDays: 365

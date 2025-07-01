@@ -1,75 +1,125 @@
 package main
 
+import (
+	"context"
+	"flag"
+	"log"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/dimedim/hw-test/hw12_13_14_15_16_calendar/internal/rabbitmq"
+)
+
 // import "fmt"
 
 // func main() {
 // 	fmt.Println("sheduler producer")
 // }
 
-import (
-	"context"
-	"log"
-	"strconv"
-	"time"
-
-	amqp "github.com/rabbitmq/amqp091-go"
-)
-
 // TODO: набросок реббит
 func main() {
+	// HelloExample()
 
-	conn, err := amqp.Dial("amqp://guest:guest@localhost:5672/")
+	//? Логгер
 
+	//? Конфиг
+	cfgPath := flag.String("config", "configs/rabbit.yaml", "path to config file")
+	flag.Parse()
+
+	// cfg, err := config.Load(*cfgPath)
+	// if err != nil {
+	// 	log.Fatalf("config load: %v", err)
+	// }
+	_ = cfgPath
+
+	//? Подключиться к БД
+
+	//? Подключиться к КроликуМэКу
+	client, err := rabbitmq.New("amqp://guest:guest@localhost:5672/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+
+	// ? объявить exchange/queue и биндинг.
+
+	ctx := context.Background()
+	err = client.Setup(ctx, "", "", "", "")
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	defer conn.Close()
-
-	ch, err := conn.Channel()
-
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer ch.Close()
-
-	queue, err := ch.QueueDeclare(
-		"hello",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	//? Обработка сигнала прерывания
+	sigCtx, cancel := signal.NotifyContext(ctx,
+		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	body1 := "Hello!!!"
+	//? ticker
+	// TODO: cfg.Scheduler.IntervalSeconds
+	ticker := time.NewTicker(time.Duration(1) * time.Second)
+	defer ticker.Stop()
 
-	i := 0
 	for {
-		i++
-		body := body1 + strconv.Itoa(i)
-		err = ch.PublishWithContext(
-			ctx,
-			"",
-			queue.Name,
-			false, false,
-			amqp.Publishing{
-				ContentType: "text/plain",
-				Body:        []byte(body),
-			},
-		)
-
-		if err != nil {
-			log.Fatal(err)
+		select {
+		case <-sigCtx.Done():
+			client.Close()
+		case now := <-ticker.C:
+			ProcessMsg(now)
 		}
-		log.Printf(" [x] Sent %s\n", body)
-		time.Sleep(time.Second * 3)
 	}
-
 }
+
+// TODO:
+func ProcessMsg(now time.Time) {
+	//? ListEventsToNotify(now) — выбрать все события, у которых notify_before
+
+	// Сформировать объекты Notification и сериализовать их в JSON.
+
+	// Опубликовать в очередь (Publish(exchange, routingKey, body)).
+
+	// Удалить события старее года (DeleteOlderThan(now.AddDate(-1,0,0))).
+
+	// логировать
+}
+
+// func runIteration(
+//   ctx context.Context,
+//   db store.Store,
+//   rmq rabbitmq.Client,
+//   cfg *config.Config,
+//   now time.Time,
+// ) {
+//   // 1) Выбираем события, нуждающиеся в напоминании
+//   events, err := db.ListEventsToNotify(ctx, now)
+//   if err != nil {
+//     log.Printf("db.ListEventsToNotify error: %v", err)
+//     return
+//   }
+//   log.Printf("→ Found %d events to notify", len(events))
+
+//   // 2) Публикуем каждое в очередь
+//   for _, ev := range events {
+//     notif := models.Notification{
+//       EventID:   ev.ID,
+//       UserID:    ev.UserID,
+//       Title:     ev.Title,
+//       EventTime: ev.Time,
+//     }
+//     data, _ := json.Marshal(notif)
+//     if err := rmq.Publish(ctx, cfg.RabbitMQ.Exchange, cfg.RabbitMQ.RoutingKey, data); err != nil {
+//       log.Printf("publish error: %v", err)
+//     } else {
+//       log.Printf("→ Published notification for event %d", ev.ID)
+//     }
+//   }
+
+//   // 3) Удаляем старые события
+//   cutoff := now.AddDate(0, 0, -cfg.Scheduler.DeleteOlderThanDays)
+//   delCount, err := db.DeleteOlderThan(ctx, cutoff)
+//   if err != nil {
+//     log.Printf("db.DeleteOlderThan error: %v", err)
+//   } else if delCount > 0 {
+//     log.Printf("→ Deleted %d old events", delCount)
+//   }
+// }
