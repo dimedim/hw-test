@@ -150,3 +150,12 @@ func (s *Storage) ListByAnyTime(
 	}
 	return events, nil
 }
+
+// TODO:
+func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*models.Event, error) {
+	return nil, nil
+}
+
+func (s *Storage) DeleteOlderThan(ctx context.Context, expire time.Time) (int, error) {
+	return 1, nil
+}

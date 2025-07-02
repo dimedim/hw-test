@@ -1,13 +1,18 @@
 db:
-  dsn: "postgres://user:pass@postgres-db:5432/calendar?sslmode=disable"
+  dsn: "postgres://calendar:calendar@localhost:5432/calendar?sslmode=disable"
+  type: memory
 
 rabbitmq:
   url:          "amqp://guest:guest@rabbitmq:5672/"
-  exchange:     "calendar_events"
-  exchangeType: "direct"
+  exch_name:    "calendar_events"
+  exch_type:    "direct"
   queue:        "calendar_notifications"
-  routingKey:   "notify"
+  routing_key:   "notify"
 
 scheduler:
-  intervalSeconds: 60
-  deleteOlderThanDays: 365
+  interval: "6s"
+  delete_older_than_days: 365
+
+logger:
+  level: info
+  log_folder: "./logs"
