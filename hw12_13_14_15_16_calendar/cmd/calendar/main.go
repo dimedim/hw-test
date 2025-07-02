@@ -52,8 +52,6 @@ func main() {
 	// app
 	ctx := context.Background()
 
-	// storr := NewStorage(ctx, config)
-
 	stor := storage.NewStorage(ctx, config.HTTP.DBType, config.GetPostgresDSN(), config.DB.MigrationFilepath)
 	defer stor.Close()
 	calendar := app.New(stor)
@@ -91,30 +89,3 @@ func main() {
 		os.Exit(1) //nolint:gocritic
 	}
 }
-
-// func NewStorage(ctx context.Context, config *config.Config) storage.EventStorage {
-// 	switch config.HTTP.DBType {
-// 	case "memory":
-// 		return memorystorage.New()
-// 	case "postgres":
-// 		pgxConn := database.MustConnectDatabase(ctx, config)
-// 		psqlStorage := sqlstorage.New(pgxConn)
-// 		if err := psqlStorage.Connect(ctx); err != nil {
-// 			log.Fatal("cant connect to db: ", err)
-// 		}
-// 		migrate(ctx, pgxConn.DB, config.DB.MigrationFilepath)
-// 		return psqlStorage
-// 	}
-// 	slog.Warn("storage type not set", slog.String("type", config.HTTP.DBType))
-// 	return memorystorage.New()
-// }
-
-// func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
-// 	err := goose.UpContext(ctx, db, migrationsPath)
-// 	if err != nil {
-// 		log.Fatal("migration error: %w", err)
-// 	}
-// 	// if err := goose.DownContext(ctx, db, migrationsPath); err != nil {
-// 	// 	log.Fatal("down migration: %w", err)
-// 	// }
-// }

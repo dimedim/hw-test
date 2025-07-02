@@ -3,11 +3,12 @@ db:
   type: memory
 
 rabbitmq:
-  url:          "amqp://guest:guest@rabbitmq:5672/"
-  exch_name:    "calendar_events"
-  exch_type:    "direct"
-  queue:        "calendar_notifications"
-  routing_key:   "notify"
+  url: "amqp://guest:guest@localhost:5672/"
+  # url: "amqp://guest:guest@rabbitmq:5672/"
+  exch_name: "calendar_events"
+  exch_type: "direct"
+  queue: "calendar_notifications"
+  routing_key: "notify"
 
 scheduler:
   interval: "6s"

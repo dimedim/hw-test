@@ -103,7 +103,7 @@ simple: build-scheduler build-sender
 	$(SHEDULER_BIN)
 
 sender: build-sender
-	$(SENDER_BIN)
+	$(SENDER_BIN) --config ./configs/rabbit.yaml
 
 scheduler: build-scheduler
-	$(SHEDULER_BIN)
+	$(SHEDULER_BIN) --config ./configs/rabbit.yaml
