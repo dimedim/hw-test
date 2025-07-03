@@ -19,9 +19,10 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "configs/rabbit.yaml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "", "Path to configuration file")
 }
 func main() {
+	flag.Parse()
 	cfg := config.LoadRabbitCfg(configFile)
 	logger := logger.New(cfg.Logger.Level, os.Stdout)
 	client, err := rabbitmq.New(cfg.Rabbit.URL)

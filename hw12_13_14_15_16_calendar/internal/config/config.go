@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"strings"
 	"time"
 
@@ -46,7 +47,7 @@ type GRPCServer struct {
 // 3) Дефолт если не задано ничего. Если переменная пустая то останется пустой!
 func MustLoad(filepath string) *Config {
 	if err := godotenv.Load(); err != nil {
-		panic("godotenv")
+		slog.Warn("empty .env file", slog.String("err", err.Error()))
 	}
 
 	var cfg Config

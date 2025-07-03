@@ -8,6 +8,11 @@ services:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 10s
+      retries: 5
     ports:
       - "5432:5432"
     volumes:
@@ -23,6 +28,60 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q ping"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  calendar:
+    build:
+      dockerfile: Dockerfile
+    image: calendar:latest
+    container_name: calendar
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+    volumes:
+      - ./configs/config.yaml:/calendar/config.yaml:ro
+      - ./logs:/calendar/logs
+      - ./migrations:/calendar/migrations
+    command: ["./calendar", "--config=./config.yaml"]
+    env_file:
+      - .env
+  scheduler:
+    build:
+      dockerfile: Dockerfile
+    image: calendar:latest
+    container_name: scheduler
+    depends_on:
+      postgres-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./configs/rabbit.yaml:/rabbit.yaml:ro
+    env_file:
+      - .env
+    command: ["./calendar_scheduler", "--config=./rabbit.yaml"]
+
+  sender:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: calendar:latest
+    container_name: sender
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    volumes:
+      - ./configs/rabbit.yaml:/rabbit.yaml:ro
+    env_file:
+      - .env
+    command: ["./calendar_sender", "--config", "/rabbit.yaml"]
 
 volumes:
   db_data:

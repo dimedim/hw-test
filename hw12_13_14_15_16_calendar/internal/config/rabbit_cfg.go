@@ -1,6 +1,7 @@
 package config
 
 import (
+	"log/slog"
 	"time"
 
 	"github.com/ilyakaznacheev/cleanenv"
@@ -34,7 +35,7 @@ type Scheduler struct {
 
 func LoadRabbitCfg(filepath string) *RabbitConfig {
 	if err := godotenv.Load(); err != nil {
-		panic("godotenv")
+		slog.Warn("empty .env file", slog.String("err", err.Error()))
 	}
 
 	var cfg RabbitConfig

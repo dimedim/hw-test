@@ -21,7 +21,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "configs/rabbit.yaml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "", "Path to configuration file")
 }
 
 func main() {
@@ -111,8 +111,10 @@ func ProcessMsg(
 
 	//! TODO: DELETE
 	notif := models.Notification{
-		EventID: "123123",
-		Title:   "TUOWAODWJWADJ",
+		EventID:  "123123",
+		Title:    "TUOWAODWJWADJ",
+		StartsAt: time.Now(),
+		UserID:   "userID_123",
 	}
 	data, _ := json.Marshal(notif)
 	client.Publish(ctx, cfg.Rabbit.ExchName, cfg.Rabbit.Key, data)

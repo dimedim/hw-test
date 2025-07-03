@@ -30,7 +30,8 @@ type Server struct {
 }
 
 func NewServer(cfg *config.Config, log logger.Logger, router *mux.Router, handlers Handlers) *Server {
-	addr := fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port)
+	// addr := fmt.Sprintf("%s:%s", cfg.HTTP.Host, cfg.HTTP.Port)
+	addr := fmt.Sprintf(":%s", cfg.HTTP.Port)
 	return &Server{
 		Cfg: cfg,
 		Log: log,
@@ -47,7 +48,7 @@ func NewServer(cfg *config.Config, log logger.Logger, router *mux.Router, handle
 }
 
 func (s *Server) Start() error {
-	s.Log.Info("starting HTTP server", "addr", "http://"+s.HTTPServer.Addr)
+	s.Log.Info("starting HTTP server", "port", s.HTTPServer.Addr)
 	return s.HTTPServer.ListenAndServe()
 }
 
