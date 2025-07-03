@@ -27,11 +27,7 @@ type EventStorage interface {
 
 	SchedulerStorrage
 }
-
-// TODO: Заглушка
 type SchedulerStorrage interface {
-	// notifyAt = event.StartsAt - event.NotifyBefore
-	//  и если now >= notifyAt, то событие нужно вернуть.
 	ListEventsToNotify(ctx context.Context, now time.Time) ([]*models.Event, error)
 	DeleteOlderThan(ctx context.Context, expire time.Time) (int, error)
 }
@@ -60,6 +56,7 @@ func migrate(ctx context.Context, db *sql.DB, migrationsPath string) {
 	if err != nil {
 		log.Fatal("migration error: %w", err)
 	}
+	slog.Info("migrations set")
 	// if err := goose.DownContext(ctx, db, migrationsPath); err != nil {
 	// 	log.Fatal("down migration: %w", err)
 	// }

@@ -21,6 +21,7 @@ var configFile string
 func init() {
 	flag.StringVar(&configFile, "config", "", "Path to configuration file")
 }
+
 func main() {
 	flag.Parse()
 	cfg := config.LoadRabbitCfg(configFile)
@@ -28,7 +29,7 @@ func main() {
 	client, err := rabbitmq.New(cfg.Rabbit.URL)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 	defer client.Close()
 
@@ -37,7 +38,7 @@ func main() {
 	err = client.Setup(ctx, cfg.Rabbit.ExchName, cfg.Rabbit.ExchType, cfg.Rabbit.Queue, cfg.Rabbit.Key)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	sigCtx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -46,7 +47,7 @@ func main() {
 	ch, err := client.Consume(ctx, cfg.Rabbit.Queue)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	go func() {
@@ -65,7 +66,7 @@ func main() {
 						msg.Nack(false, false)
 						continue
 					}
-					fmt.Fprintf(os.Stdout, "MESSAGE: %+v\n", data)
+					fmt.Fprintf(os.Stdout, "GOT MESSAGE: %+v\n", data)
 				}
 			}
 		}

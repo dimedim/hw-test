@@ -76,3 +76,20 @@ URL: http://localhost:8080/events/week/{user_id}?date=2025-06-16
 
 ### GET /events/month/{user_id}?date=YYYY-MM-DD  
 URL: http://localhost:8080/events/month/{user_id}?date=2025-06-01
+
+
+## RABBITMQ
+
+Настроил сборку через докер
+запуск всех сервисов с билдом
+```bash
+make run_all
+```
+запуск в фоне, без билда:
+```bash
+make up
+```
+или
+```bash
+docker compose up -d
+```

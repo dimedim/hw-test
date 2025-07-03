@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -25,7 +24,6 @@ func init() {
 }
 
 func main() {
-
 	flag.Parse()
 	cfg := config.LoadRabbitCfg(configFile)
 
@@ -38,14 +36,14 @@ func main() {
 	client, err := rabbitmq.New(cfg.Rabbit.URL)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 	defer client.Close()
 
 	err = client.Setup(ctx, cfg.Rabbit.ExchName, cfg.Rabbit.ExchType, cfg.Rabbit.Queue, cfg.Rabbit.Key)
 	if err != nil {
 		logger.Error(err.Error())
-		os.Exit(1)
+		return
 	}
 
 	sigCtx, cancel := signal.NotifyContext(ctx, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -108,15 +106,4 @@ func ProcessMsg(
 	} else if delCount > 0 {
 		logger.Info("Deleted", slog.Int("Num of deleted events", delCount))
 	}
-
-	//! TODO: DELETE
-	notif := models.Notification{
-		EventID:  "123123",
-		Title:    "TUOWAODWJWADJ",
-		StartsAt: time.Now(),
-		UserID:   "userID_123",
-	}
-	data, _ := json.Marshal(notif)
-	client.Publish(ctx, cfg.Rabbit.ExchName, cfg.Rabbit.Key, data)
-	fmt.Printf("Send msg: %v\n", notif)
 }

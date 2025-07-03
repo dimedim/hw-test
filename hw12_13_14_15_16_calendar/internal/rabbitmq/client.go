@@ -34,7 +34,7 @@ func New(url string) (Client, error) {
 	return &RabbitClient{conn: conn, ch: ch}, nil
 }
 
-func (c *RabbitClient) Setup(ctx context.Context, exch, exchType, queue, key string) error {
+func (c *RabbitClient) Setup(_ context.Context, exch, exchType, queue, key string) error {
 	if err := c.ch.ExchangeDeclare(
 		exch,     // имя
 		exchType, // тип ("direct", "fanout", "topic")

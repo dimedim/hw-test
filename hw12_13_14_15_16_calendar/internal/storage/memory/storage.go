@@ -135,9 +135,8 @@ func (s *Storage) Close() error {
 	return nil
 }
 
-// TODO:
+// TODO:.
 func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*models.Event, error) {
-
 	select {
 	case <-ctx.Done():
 		return nil, fmt.Errorf("ListEventsToNotify: %w", ctx.Err())
@@ -147,7 +146,6 @@ func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*mod
 	defer s.mu.RUnlock()
 	var res []*models.Event
 	for _, ev := range s.DB {
-
 		if ev.NotifyOffset == 0 {
 			continue
 		}
@@ -159,7 +157,6 @@ func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*mod
 		}
 	}
 	return res, nil
-
 }
 
 func (s *Storage) DeleteOlderThan(ctx context.Context, expire time.Time) (int, error) {
@@ -174,7 +171,6 @@ func (s *Storage) DeleteOlderThan(ctx context.Context, expire time.Time) (int, e
 	removedCount := 0
 
 	for id, ev := range s.DB {
-		// Если событие старее порога — удаляем (не добавляем в kept)
 		if ev.StartsAt.Before(expire) {
 			removedCount++
 			delete(s.DB, id)

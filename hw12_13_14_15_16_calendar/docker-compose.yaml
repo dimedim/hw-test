@@ -58,6 +58,8 @@ services:
     image: calendar:latest
     container_name: scheduler
     depends_on:
+      calendar:
+        condition: service_started
       postgres-db:
         condition: service_healthy
       rabbitmq:
@@ -75,6 +77,8 @@ services:
     image: calendar:latest
     container_name: sender
     depends_on:
+      calendar: 
+        condition: service_started
       rabbitmq:
         condition: service_healthy
     volumes:

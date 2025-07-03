@@ -1,5 +1,5 @@
 BIN := "./bin/calendar"
-SHEDULER_BIN := "./bin/calendar_scheduler"
+SCHEDULER_BIN := "./bin/calendar_scheduler"
 SENDER_BIN := "./bin/calendar_sender"
 DOCKER_IMG="calendar:develop"
 
@@ -27,9 +27,6 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-build: build-scheduler build-sender
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
-
 run: build
 	$(BIN) --config ./configs/config.yaml
 
@@ -48,7 +45,7 @@ export_env:
 # goose -dir ./migrations/ postgres postgres://postgres:postgres@localhost:5432/postgres up
 clean:
 	rm -rf ./bin
-	rm ./logs/*
+	rm -rf ./logs/*
 	docker compose down
 
 migrate_new: export_env
@@ -66,8 +63,7 @@ migrate_status: export_env
 up:
 	docker compose down
 	docker compose up -d
-	sleep 5
-	@$(MAKE) run
+	
 #grpc-----------------------------------------------------------------------
 PROTO_DIR= api
 OUT_DIR= api/grpcevents
@@ -83,27 +79,15 @@ generate:
 	$(PROTO_FILE)
 
 #rabbitMQ-----------------------------------------------------------------------
+
+build: build-scheduler build-sender
+	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+
 build-scheduler:
-	go build -o $(SHEDULER_BIN) ./cmd/scheduler
+	go build -o $(SCHEDULER_BIN) ./cmd/scheduler
 
 build-sender:
 	go build -o $(SENDER_BIN) ./cmd/sender
 
-# API (calendar);
-# Планировщик (calendar_scheduler);
-# Рассыльщик (calendar_sender).
-
-# ./calendar           --config=/path/to/calendar_config.yaml
-# ./calendar_scheduler --config=/path/to/scheduler_config.yaml
-# ./calendar_sender    --config=/path/to/sender_config.yaml
-
-
-simple: build-scheduler build-sender
-	$(SENDER_BIN)
-	$(SHEDULER_BIN)
-
-sender: build-sender
-	$(SENDER_BIN) --config ./configs/rabbit.yaml
-
-scheduler: build-scheduler
-	$(SHEDULER_BIN) --config ./configs/rabbit.yaml
+run_all:
+	docker compose up --build
