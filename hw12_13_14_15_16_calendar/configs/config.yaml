@@ -3,9 +3,10 @@ logger:
   log_folder: "./logs"
 
 http_server:
-  port: 8080
-  host: localhost
-  db_type: memory
+  port: "8080"
+  host: "localhost"
+  db_type: postgres
+  # db_type: memory
   timeout: 4s
   idle_timeout: 30s
 
@@ -13,10 +14,11 @@ database:
   username: calendar
   password: calendar
   db_name: calendar
-  host: "localhost"
+  # host: "localhost"
+  host:  "postgres-db"
   port: "5432"
   migrations_folder: "./migrations"
   
 grpc_server:
-  port: 50051
+  port: "50051"
   host: localhost

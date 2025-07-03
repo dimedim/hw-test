@@ -150,3 +150,47 @@ func (s *Storage) ListByAnyTime(
 	}
 	return events, nil
 }
+
+func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*models.Event, error) {
+	const query = `
+	SELECT id, user_id, title, description, starts_at, ends_at, notify_offset, created_at, updated_at
+	FROM events
+	WHERE notify_offset IS NOT NULL
+	AND (EXTRACT(EPOCH FROM (starts_at - $1)) * 1e9) <= notify_offset;
+	`
+
+	var events []*models.Event
+	if err := s.DB.SelectContext(ctx, &events, query, now); err != nil {
+		return nil, fmt.Errorf("list events to notify: %w", err)
+	}
+
+	if len(events) > 0 {
+		ids := make([]string, len(events))
+		for i, e := range events {
+			ids[i] = e.ID
+		}
+		const clearQuery = `UPDATE events
+		SET notify_offset = NULL
+		WHERE id = ANY($1);`
+		if _, err := s.DB.ExecContext(ctx, clearQuery, ids); err != nil {
+			return nil, fmt.Errorf("clear notify_offset: %w", err)
+		}
+	}
+
+	return events, nil
+}
+
+func (s *Storage) DeleteOlderThan(ctx context.Context, expire time.Time) (int, error) {
+	const query = `DELETE FROM events WHERE starts_at < $1;`
+
+	res, err := s.DB.ExecContext(ctx, query, expire)
+	if err != nil {
+		return 0, fmt.Errorf("DeleteOlderThan exec: %w", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("DeleteOlderThan rows affected: %w", err)
+	}
+	return int(rows), nil
+}

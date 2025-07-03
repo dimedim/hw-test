@@ -1,4 +1,6 @@
 BIN := "./bin/calendar"
+SCHEDULER_BIN := "./bin/calendar_scheduler"
+SENDER_BIN := "./bin/calendar_sender"
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
@@ -25,11 +27,8 @@ install-lint-deps:
 lint: install-lint-deps
 	golangci-lint run ./...
 
-build:
-	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
-
 run: build
-	$(BIN) -config ./configs/config.yaml
+	$(BIN) --config ./configs/config.yaml
 
 test:
 	go test -race -v ./internal/...
@@ -46,7 +45,7 @@ export_env:
 # goose -dir ./migrations/ postgres postgres://postgres:postgres@localhost:5432/postgres up
 clean:
 	rm -rf ./bin
-	rm ./logs/*
+	rm -rf ./logs/*
 	docker compose down
 
 migrate_new: export_env
@@ -64,8 +63,7 @@ migrate_status: export_env
 up:
 	docker compose down
 	docker compose up -d
-	sleep 5
-	@$(MAKE) run
+	
 #grpc-----------------------------------------------------------------------
 PROTO_DIR= api
 OUT_DIR= api/grpcevents
@@ -79,3 +77,17 @@ generate:
 	--go_out=$(OUT_DIR) --go_opt=paths=source_relative \
 	--go-grpc_out=$(OUT_DIR) --go-grpc_opt=paths=source_relative \
 	$(PROTO_FILE)
+
+#rabbitMQ-----------------------------------------------------------------------
+
+build: build-scheduler build-sender
+	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+
+build-scheduler:
+	go build -o $(SCHEDULER_BIN) ./cmd/scheduler
+
+build-sender:
+	go build -o $(SENDER_BIN) ./cmd/sender
+
+run_all:
+	docker compose up --build

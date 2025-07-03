@@ -134,3 +134,46 @@ func (s *Storage) GetEventListByAnyDate(userID string, start, end time.Time) ([]
 func (s *Storage) Close() error {
 	return nil
 }
+
+func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*models.Event, error) {
+	select {
+	case <-ctx.Done():
+		return nil, fmt.Errorf("ListEventsToNotify: %w", ctx.Err())
+	default:
+	}
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	var res []*models.Event
+	for _, ev := range s.DB {
+		if ev.NotifyOffset == 0 {
+			continue
+		}
+
+		notifyAt := ev.StartsAt.Add(-ev.NotifyOffset)
+
+		if now.Equal(notifyAt) || now.After(notifyAt) {
+			res = append(res, ev)
+		}
+	}
+	return res, nil
+}
+
+func (s *Storage) DeleteOlderThan(ctx context.Context, expire time.Time) (int, error) {
+	select {
+	case <-ctx.Done():
+		return 0, fmt.Errorf("DeleteOlderThan: %w", ctx.Err())
+	default:
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	removedCount := 0
+
+	for id, ev := range s.DB {
+		if ev.StartsAt.Before(expire) {
+			removedCount++
+			delete(s.DB, id)
+		}
+	}
+	return removedCount, nil
+}

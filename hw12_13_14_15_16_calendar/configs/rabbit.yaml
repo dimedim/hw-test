@@ -1,0 +1,20 @@
+db:
+  # dsn: "postgres://calendar:calendar@localhost:5432/calendar?sslmode=disable"
+  dsn: "postgres://calendar:calendar@postgres-db:5432/calendar?sslmode=disable"
+  type: postgres
+
+rabbitmq:
+  # url: "amqp://guest:guest@localhost:5672/"
+  url: "amqp://guest:guest@rabbitmq:5672/"
+  exch_name: "calendar_events"
+  exch_type: "direct"
+  queue: "calendar_notifications"
+  routing_key: "notify"
+
+scheduler:
+  interval: "10s"
+  delete_older_than_days: 365
+
+logger:
+  level: info
+  log_folder: "./logs"
