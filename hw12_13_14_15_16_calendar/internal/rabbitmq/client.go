@@ -94,7 +94,7 @@ func (c *RabbitClient) Consume(ctx context.Context, queue string) (<-chan amqp.D
 		queue,
 		"", // consumerTag — это просто строковое имя для «потребителя» (твоего процесса).
 		// Если оставить его пустым (""), RabbitMQ сам сгенерирует уникальный тег.
-		true,  // autoAck // TODO: надо бы сделать подтверждение после обработки, а не автоматом
+		true,  // autoAck
 		false, // exclusive
 		false, // noLocal
 		false, // noWait

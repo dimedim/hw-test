@@ -135,7 +135,6 @@ func (s *Storage) Close() error {
 	return nil
 }
 
-// TODO:.
 func (s *Storage) ListEventsToNotify(ctx context.Context, now time.Time) ([]*models.Event, error) {
 	select {
 	case <-ctx.Done():
